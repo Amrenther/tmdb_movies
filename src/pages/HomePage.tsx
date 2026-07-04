@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { getMovies, getGenres, getTrendingMovies, getTopRatedMovies, getNowPlayingMovies } from "../api/tmdbApi";
 import { useEffect, useState, useRef } from "react";
+import { useMovieList } from "../context/MovieListContext";
 
 /* ─── Types ─────────────────────────────────────────────── */
 interface Movie {
@@ -33,10 +34,17 @@ const SkeletonCard = () => (
 /* ─── Movie Card ─────────────────────────────────────────── */
 const MovieCard = ({ movie, genres }: { movie: Movie; genres: Genre[] }) => {
     const navigate = useNavigate();
+    const { toggleFavorite, isFavorite, toggleWatchlist, isInWatchlist } = useMovieList();
     const genreNames = movie.genre_ids
         ?.slice(0, 2)
         .map((gid) => genres.find((g) => g.id === gid)?.name)
         .filter(Boolean);
+    const fav = isFavorite(movie.id);
+    const inWL = isInWatchlist(movie.id);
+
+    const saved = { id: movie.id, title: movie.title, poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path, release_date: movie.release_date,
+        vote_average: movie.vote_average, overview: movie.overview, genre_ids: movie.genre_ids };
 
     return (
         <div className="movie-card" onClick={() => navigate(`/movie/${movie.id}`)}>
@@ -57,6 +65,19 @@ const MovieCard = ({ movie, genres }: { movie: Movie; genres: Genre[] }) => {
                 <span className="movie-card-rating">
                     ★ {movie.vote_average?.toFixed(1)}
                 </span>
+                {/* Action buttons */}
+                <div className="mc-actions" onClick={(e) => e.stopPropagation()}>
+                    <button
+                        className={`mc-action-btn fav-btn${fav ? " active" : ""}`}
+                        title={fav ? "Remove from Favorites" : "Add to Favorites"}
+                        onClick={(e) => { e.stopPropagation(); toggleFavorite(saved); }}
+                    >{fav ? "❤️" : "🤍"}</button>
+                    <button
+                        className={`mc-action-btn wl-btn${inWL ? " active" : ""}`}
+                        title={inWL ? "Remove from Watchlist" : "Add to Watchlist"}
+                        onClick={(e) => { e.stopPropagation(); toggleWatchlist(saved); }}
+                    >{inWL ? "🔖" : "🏷️"}</button>
+                </div>
             </div>
             <div className="movie-card-body">
                 <h3 className="movie-card-title">{movie.title}</h3>
@@ -116,6 +137,7 @@ const MovieRow = ({
 /* ─── Hero Spotlight ─────────────────────────────────────── */
 const HeroSpotlight = ({ movies }: { movies: Movie[] }) => {
     const navigate = useNavigate();
+    const { toggleFavorite, isFavorite, toggleWatchlist, isInWatchlist } = useMovieList();
     const [idx, setIdx] = useState(0);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -136,6 +158,12 @@ const HeroSpotlight = ({ movies }: { movies: Movie[] }) => {
     const goTo = (i: number) => { setIdx(i); resetTimer(); };
 
     if (!movie) return null;
+
+    const fav = isFavorite(movie.id);
+    const inWL = isInWatchlist(movie.id);
+    const heroSaved = { id: movie.id, title: movie.title, poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path, release_date: movie.release_date,
+        vote_average: movie.vote_average, overview: movie.overview, genre_ids: movie.genre_ids };
 
     return (
         <div className="hero">
@@ -162,6 +190,20 @@ const HeroSpotlight = ({ movies }: { movies: Movie[] }) => {
                 <div className="hero-actions">
                     <button className="hero-btn-primary" onClick={() => navigate(`/movie/${movie.id}`)}>
                         ▶ View Details
+                    </button>
+                    <button
+                        className={`hero-btn-icon${fav ? " hero-btn-icon--active-fav" : ""}`}
+                        title={fav ? "Remove from Favorites" : "Add to Favorites"}
+                        onClick={() => toggleFavorite(heroSaved)}
+                    >
+                        {fav ? "❤️" : "🤍"} {fav ? "Favorited" : "Favorite"}
+                    </button>
+                    <button
+                        className={`hero-btn-icon${inWL ? " hero-btn-icon--active-wl" : ""}`}
+                        title={inWL ? "Remove from Watchlist" : "Add to Watchlist"}
+                        onClick={() => toggleWatchlist(heroSaved)}
+                    >
+                        {inWL ? "🔖" : "🏷️"} {inWL ? "In Watchlist" : "Watchlist"}
                     </button>
                 </div>
             </div>
@@ -241,6 +283,40 @@ const GenreFilter = ({
         ))}
     </div>
 );
+
+/* ─── Grid Movie Card (browse section) ──────────────────── */
+const GridMovieCard = ({ movie }: { movie: Movie }) => {
+    const navigate = useNavigate();
+    const { toggleFavorite, isFavorite, toggleWatchlist, isInWatchlist } = useMovieList();
+    const fav = isFavorite(movie.id);
+    const inWL = isInWatchlist(movie.id);
+    const saved = {
+        id: movie.id, title: movie.title, poster_path: movie.poster_path,
+        backdrop_path: movie.backdrop_path, release_date: movie.release_date,
+        vote_average: movie.vote_average, overview: movie.overview, genre_ids: movie.genre_ids,
+    };
+    return (
+        <div className="grid-movie-card" onClick={() => navigate(`/movie/${movie.id}`)}>
+            <div className="movie-card-poster-wrap">
+                {movie.poster_path ? (
+                    <img src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`} alt={movie.title} className="movie-card-poster" loading="lazy" />
+                ) : (
+                    <div className="movie-card-no-poster">🎬</div>
+                )}
+                <div className="movie-card-overlay"><span className="movie-card-play-btn">▶ Details</span></div>
+                <span className="movie-card-rating">★ {movie.vote_average?.toFixed(1)}</span>
+                <div className="mc-actions" onClick={(e) => e.stopPropagation()}>
+                    <button className={`mc-action-btn fav-btn${fav ? " active" : ""}`} title={fav ? "Remove from Favorites" : "Add to Favorites"} onClick={(e) => { e.stopPropagation(); toggleFavorite(saved); }}>{fav ? "❤️" : "🤍"}</button>
+                    <button className={`mc-action-btn wl-btn${inWL ? " active" : ""}`} title={inWL ? "Remove from Watchlist" : "Add to Watchlist"} onClick={(e) => { e.stopPropagation(); toggleWatchlist(saved); }}>{inWL ? "🔖" : "🏷️"}</button>
+                </div>
+            </div>
+            <div className="movie-card-body">
+                <h3 className="movie-card-title">{movie.title}</h3>
+                <div className="movie-card-meta"><span>{movie.release_date?.slice(0, 4)}</span></div>
+            </div>
+        </div>
+    );
+};
 
 /* ─── Main HomePage ──────────────────────────────────────── */
 const HomePage = () => {
@@ -422,6 +498,63 @@ const HomePage = () => {
                     transform: translateY(-2px);
                     box-shadow: 0 8px 24px rgba(102,126,234,0.5);
                 }
+
+                /* Hero icon action buttons */
+                .hero-btn-icon {
+                    display: inline-flex; align-items: center; gap: 0.35rem;
+                    background: rgba(255,255,255,0.1);
+                    backdrop-filter: blur(8px);
+                    color: #fff;
+                    border: 1px solid rgba(255,255,255,0.18);
+                    padding: 0.6rem 1.1rem;
+                    border-radius: 999px;
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s, transform 0.2s, border-color 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+                .hero-btn-icon:hover {
+                    background: rgba(255,255,255,0.18);
+                    transform: translateY(-2px);
+                }
+                .hero-btn-icon--active-fav {
+                    background: rgba(239,68,68,0.25);
+                    border-color: rgba(239,68,68,0.5);
+                }
+                .hero-btn-icon--active-wl {
+                    background: rgba(59,130,246,0.25);
+                    border-color: rgba(59,130,246,0.5);
+                }
+
+                /* Card action buttons */
+                .mc-actions {
+                    position: absolute;
+                    top: 0.4rem; left: 0.4rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.3rem;
+                    opacity: 0;
+                    transition: opacity 0.22s;
+                    z-index: 3;
+                }
+                .movie-card:hover .mc-actions { opacity: 1; }
+                .mc-action-btn {
+                    width: 28px; height: 28px;
+                    border-radius: 50%;
+                    border: 1px solid rgba(255,255,255,0.18);
+                    background: rgba(0,0,0,0.72);
+                    backdrop-filter: blur(6px);
+                    font-size: 0.85rem;
+                    cursor: pointer;
+                    display: flex; align-items: center; justify-content: center;
+                    transition: transform 0.15s, background 0.2s;
+                    padding: 0;
+                    line-height: 1;
+                }
+                .mc-action-btn:hover { transform: scale(1.2); }
+                .mc-action-btn.fav-btn.active { background: rgba(239,68,68,0.3); border-color: rgba(239,68,68,0.6); }
+                .mc-action-btn.wl-btn.active { background: rgba(59,130,246,0.3); border-color: rgba(59,130,246,0.6); }
 
                 /* Dots */
                 .hero-dots {
@@ -909,34 +1042,7 @@ const HomePage = () => {
                 ) : (
                     <div className="movies-grid">
                         {movies.map((movie) => (
-                            <div
-                                key={movie.id}
-                                className="grid-movie-card"
-                                onClick={() => navigate(`/movie/${movie.id}`)}
-                            >
-                                <div className="movie-card-poster-wrap">
-                                    {movie.poster_path ? (
-                                        <img
-                                            src={`https://image.tmdb.org/t/p/w342${movie.poster_path}`}
-                                            alt={movie.title}
-                                            className="movie-card-poster"
-                                            loading="lazy"
-                                        />
-                                    ) : (
-                                        <div className="movie-card-no-poster">🎬</div>
-                                    )}
-                                    <div className="movie-card-overlay">
-                                        <span className="movie-card-play-btn">▶ Details</span>
-                                    </div>
-                                    <span className="movie-card-rating">★ {movie.vote_average?.toFixed(1)}</span>
-                                </div>
-                                <div className="movie-card-body">
-                                    <h3 className="movie-card-title">{movie.title}</h3>
-                                    <div className="movie-card-meta">
-                                        <span>{movie.release_date?.slice(0, 4)}</span>
-                                    </div>
-                                </div>
-                            </div>
+                            <GridMovieCard key={movie.id} movie={movie} />
                         ))}
                     </div>
                 )}

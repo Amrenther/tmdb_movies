@@ -1,11 +1,13 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import { useMovieList } from "../context/MovieListContext";
 
 const MainLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const { favorites, watchlist } = useMovieList();
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -15,6 +17,12 @@ const MainLayout = () => {
 
     // Close menu on route change
     useEffect(() => { setMenuOpen(false); }, [location]);
+
+    const navLinks = [
+        { label: "Home", path: "/", icon: "🏠" },
+        { label: "Favorites", path: "/favorites", icon: "❤️", count: favorites.length },
+        { label: "Watchlist", path: "/watchlist", icon: "🔖", count: watchlist.length },
+    ];
 
     return (
         <div className="app-root">
@@ -84,6 +92,7 @@ const MainLayout = () => {
                 @media (max-width: 640px) { .nav-links { display: none; } }
 
                 .nav-link {
+                    position: relative;
                     color: #94a3b8;
                     font-size: 0.88rem;
                     font-weight: 500;
@@ -93,9 +102,34 @@ const MainLayout = () => {
                     border: none;
                     background: none;
                     transition: color 0.2s, background 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    font-family: 'Inter', sans-serif;
                 }
                 .nav-link:hover { color: #fff; background: rgba(255,255,255,0.07); }
                 .nav-link.active { color: #a78bfa; background: rgba(167,139,250,0.1); }
+
+                /* Count badge on nav links */
+                .nav-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 18px;
+                    height: 18px;
+                    padding: 0 5px;
+                    border-radius: 999px;
+                    font-size: 0.62rem;
+                    font-weight: 800;
+                    color: #fff;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    line-height: 1;
+                    margin-left: 0.1rem;
+                    transition: transform 0.2s;
+                }
+                .nav-link.fav-link .nav-badge { background: linear-gradient(135deg, #ef4444, #ec4899); }
+                .nav-link.watch-link .nav-badge { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+                .nav-link:hover .nav-badge { transform: scale(1.15); }
 
                 .nav-hamburger {
                     display: none;
@@ -143,9 +177,27 @@ const MainLayout = () => {
                     background: none;
                     text-align: left;
                     transition: color 0.2s, background 0.2s;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.55rem;
+                    font-family: 'Inter', sans-serif;
                 }
                 .mobile-nav-link:hover { color: #fff; background: rgba(255,255,255,0.06); }
                 .mobile-nav-link.active { color: #a78bfa; background: rgba(167,139,250,0.1); }
+                .mobile-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    justify-content: center;
+                    min-width: 20px; height: 20px;
+                    padding: 0 5px;
+                    border-radius: 999px;
+                    font-size: 0.68rem;
+                    font-weight: 800;
+                    color: #fff;
+                    margin-left: auto;
+                }
+                .mobile-badge.fav { background: linear-gradient(135deg, #ef4444, #ec4899); }
+                .mobile-badge.watch { background: linear-gradient(135deg, #3b82f6, #6366f1); }
 
                 /* ── Main ── */
                 .main-content {
@@ -188,10 +240,18 @@ const MainLayout = () => {
                 </div>
 
                 <div className="nav-links">
-                    <button
-                        className={`nav-link ${location.pathname === "/" ? "active" : ""}`}
-                        onClick={() => navigate("/")}
-                    >Home</button>
+                    {navLinks.map((link) => (
+                        <button
+                            key={link.path}
+                            className={`nav-link${link.path === "/favorites" ? " fav-link" : ""}${link.path === "/watchlist" ? " watch-link" : ""}${location.pathname === link.path ? " active" : ""}`}
+                            onClick={() => navigate(link.path)}
+                        >
+                            {link.label}
+                            {link.count !== undefined && link.count > 0 && (
+                                <span className="nav-badge">{link.count}</span>
+                            )}
+                        </button>
+                    ))}
                 </div>
 
                 {/* Hamburger */}
@@ -205,10 +265,21 @@ const MainLayout = () => {
             {/* Mobile dropdown */}
             {menuOpen && (
                 <div className="mobile-menu">
-                    <button
-                        className={`mobile-nav-link ${location.pathname === "/" ? "active" : ""}`}
-                        onClick={() => navigate("/")}
-                    >🏠 Home</button>
+                    {navLinks.map((link) => (
+                        <button
+                            key={link.path}
+                            className={`mobile-nav-link${location.pathname === link.path ? " active" : ""}`}
+                            onClick={() => navigate(link.path)}
+                        >
+                            <span>{link.icon}</span>
+                            {link.label}
+                            {link.count !== undefined && link.count > 0 && (
+                                <span className={`mobile-badge${link.path === "/favorites" ? " fav" : " watch"}`}>
+                                    {link.count}
+                                </span>
+                            )}
+                        </button>
+                    ))}
                 </div>
             )}
 

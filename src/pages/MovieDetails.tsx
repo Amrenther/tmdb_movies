@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getMovieDetails, getMovieReviews, getMovieVideos, getMovieImages, getSimilarMovies } from "../api/tmdbApi";
+import { useMovieList } from "../context/MovieListContext";
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface MovieDetails {
@@ -426,6 +427,18 @@ const MovieDetails = () => {
         navigate(`/movie/${movieId}`);
     };
 
+    const { toggleFavorite, isFavorite, toggleWatchlist, isInWatchlist } = useMovieList();
+    const fav = movieDetails ? isFavorite(movieDetails.id) : false;
+    const inWL = movieDetails ? isInWatchlist(movieDetails.id) : false;
+    const detailSaved = movieDetails ? {
+        id: movieDetails.id,
+        title: movieDetails.title,
+        poster_path: movieDetails.poster_path,
+        release_date: movieDetails.release_date,
+        vote_average: movieDetails.vote_average,
+        overview: movieDetails.overview,
+    } : null;
+
     return (
         <div className="details-page">
             <style>{`
@@ -488,6 +501,42 @@ const MovieDetails = () => {
                 }
                 .overview-heading { font-size: 1rem; font-weight: 700; color: #e2e8f0; margin-bottom: 0.4rem; margin-top: 0.5rem; }
                 .overview-text { color: #94a3b8; font-size: 0.9rem; line-height: 1.75; }
+
+                /* ── Detail action buttons ── */
+                .detail-actions {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.65rem;
+                    margin-top: 1.25rem;
+                }
+                .detail-action-btn {
+                    display: inline-flex; align-items: center; gap: 0.4rem;
+                    padding: 0.6rem 1.2rem;
+                    border-radius: 999px;
+                    border: 1.5px solid rgba(255,255,255,0.14);
+                    background: rgba(255,255,255,0.06);
+                    color: #e2e8f0;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s, border-color 0.2s, transform 0.2s;
+                    font-family: 'Inter', sans-serif;
+                    backdrop-filter: blur(6px);
+                }
+                .detail-action-btn:hover {
+                    background: rgba(255,255,255,0.12);
+                    transform: translateY(-2px);
+                }
+                .detail-action-btn.fav-active {
+                    background: rgba(239,68,68,0.2);
+                    border-color: rgba(239,68,68,0.55);
+                    color: #fca5a5;
+                }
+                .detail-action-btn.wl-active {
+                    background: rgba(59,130,246,0.2);
+                    border-color: rgba(59,130,246,0.55);
+                    color: #93c5fd;
+                }
 
                 /* ── Shared section ── */
                 .section-heading {
@@ -887,6 +936,22 @@ const MovieDetails = () => {
                         </div>
                         <p className="overview-heading">Overview</p>
                         <p className="overview-text">{movieDetails?.overview || "No overview available."}</p>
+                        {detailSaved && (
+                            <div className="detail-actions">
+                                <button
+                                    className={`detail-action-btn${fav ? " fav-active" : ""}`}
+                                    onClick={() => toggleFavorite(detailSaved)}
+                                >
+                                    {fav ? "❤️ Favorited" : "🤍 Add to Favorites"}
+                                </button>
+                                <button
+                                    className={`detail-action-btn${inWL ? " wl-active" : ""}`}
+                                    onClick={() => toggleWatchlist(detailSaved)}
+                                >
+                                    {inWL ? "🔖 In Watchlist" : "🏷️ Add to Watchlist"}
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
