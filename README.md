@@ -439,3 +439,14 @@ This project is open-source and available under the [MIT License](LICENSE).
 <p align="center">
   Made with ❤️ by <a href="https://github.com/Amrenther">Amrenther</a> · Powered by <a href="https://www.themoviedb.org/">TMDB</a>
 </p>
+
+👨‍💻 About Me
+I'm a Computer Science graduate and Full Stack Developer interested in building modern, scalable web applications using technologies such as React, Next.js, TypeScript, PostgreSQL, and Prisma.
+
+This project represents my practical experience in developing a complete full-stack application from database design and authentication to frontend development and deployment.
+
+Connect With Me
+GitHub: https://github.com/Amrenther
+LinkedIn: https://www.linkedin.com/in/amrenther/
+⭐ If You Found This Project Useful
+If you found this project interesting, consider giving the repository a ⭐ on GitHub.
