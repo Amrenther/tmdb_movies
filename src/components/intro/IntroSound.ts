@@ -4,7 +4,8 @@ let _muted = false;
 
 function getCtx(): AudioContext {
   if (!audioCtx) {
-    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const AudioContextClass = window.AudioContext ||
+      (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     const ctx: AudioContext = new AudioContextClass();
     masterGain = ctx.createGain();
     masterGain.gain.setValueAtTime(_muted ? 0 : 1, ctx.currentTime);
