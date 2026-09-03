@@ -4,10 +4,13 @@ let _muted = false;
 
 function getCtx(): AudioContext {
   if (!audioCtx) {
-    audioCtx = new ((window as any).AudioContext || (window as any).webkitAudioContext)();
-    masterGain = audioCtx.createGain();
-    masterGain.gain.setValueAtTime(_muted ? 0 : 1, audioCtx.currentTime);
-    masterGain.connect(audioCtx.destination);
+    const AudioContextClass = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const ctx: AudioContext = new AudioContextClass();
+    masterGain = ctx.createGain();
+    masterGain.gain.setValueAtTime(_muted ? 0 : 1, ctx.currentTime);
+    masterGain.connect(ctx.destination);
+    audioCtx = ctx;
+    return ctx;
   }
   return audioCtx;
 }

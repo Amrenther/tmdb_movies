@@ -320,8 +320,6 @@ const GridMovieCard = ({ movie }: { movie: Movie }) => {
 
 /* ─── Main HomePage ──────────────────────────────────────── */
 const HomePage = () => {
-    const navigate = useNavigate();
-
     const [trending, setTrending] = useState<Movie[]>([]);
     const [topRated, setTopRated] = useState<Movie[]>([]);
     const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
