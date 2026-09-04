@@ -15,8 +15,11 @@ const MainLayout = () => {
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
 
-    // Close menu on route change
-    useEffect(() => { setMenuOpen(false); }, [location]);
+    // Close menu on navigation
+    const handleNav = (path: string) => {
+        navigate(path);
+        setMenuOpen(false);
+    };
 
     const navLinks = [
         { label: "Home", path: "/", icon: "🏠" },
@@ -234,7 +237,7 @@ const MainLayout = () => {
 
             {/* Navbar */}
             <nav className={`navbar ${scrolled ? "scrolled" : "top"}`}>
-                <div className="nav-brand" onClick={() => navigate("/")}>
+                <div className="nav-brand" onClick={() => handleNav("/")}>
                     <div className="nav-logo-icon">🎬</div>
                     <span className="nav-brand-text">MovieVerse</span>
                 </div>
@@ -244,7 +247,7 @@ const MainLayout = () => {
                         <button
                             key={link.path}
                             className={`nav-link${link.path === "/favorites" ? " fav-link" : ""}${link.path === "/watchlist" ? " watch-link" : ""}${location.pathname === link.path ? " active" : ""}`}
-                            onClick={() => navigate(link.path)}
+                            onClick={() => handleNav(link.path)}
                         >
                             {link.label}
                             {link.count !== undefined && link.count > 0 && (
@@ -269,7 +272,7 @@ const MainLayout = () => {
                         <button
                             key={link.path}
                             className={`mobile-nav-link${location.pathname === link.path ? " active" : ""}`}
-                            onClick={() => navigate(link.path)}
+                            onClick={() => handleNav(link.path)}
                         >
                             <span>{link.icon}</span>
                             {link.label}

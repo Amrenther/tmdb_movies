@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { getMovies, getGenres, getTrendingMovies, getTopRatedMovies, getNowPlayingMovies } from "../api/tmdbApi";
+import { getMovies, getGenres, getTrendingMovies, getTopRatedMovies, getNowPlayingMovies, searchPeople } from "../api/tmdbApi";
 import { useEffect, useState, useRef } from "react";
 import { useMovieList } from "../context/MovieListContext";
 
@@ -18,6 +18,13 @@ interface Movie {
 interface Genre {
     id: number;
     name: string;
+}
+
+interface SearchedPerson {
+    id: number;
+    name: string;
+    profile_path: string | null;
+    known_for_department: string;
 }
 
 /* ─── Skeleton Card ──────────────────────────────────────── */
@@ -139,23 +146,19 @@ const HeroSpotlight = ({ movies }: { movies: Movie[] }) => {
     const navigate = useNavigate();
     const { toggleFavorite, isFavorite, toggleWatchlist, isInWatchlist } = useMovieList();
     const [idx, setIdx] = useState(0);
-    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const featured = movies.slice(0, 6);
     const movie = featured[idx];
 
-    const resetTimer = () => {
-        if (timerRef.current) clearInterval(timerRef.current);
-        timerRef.current = setInterval(() => setIdx((p) => (p + 1) % featured.length), 6000);
-    };
-
     useEffect(() => {
         if (!featured.length) return;
-        resetTimer();
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+        const timer = setInterval(() => {
+            setIdx((p) => (p + 1) % featured.length);
+        }, 6000);
+        return () => clearInterval(timer);
     }, [featured.length]);
 
-    const goTo = (i: number) => { setIdx(i); resetTimer(); };
+    const goTo = (i: number) => { setIdx(i); };
 
     if (!movie) return null;
 
@@ -320,6 +323,7 @@ const GridMovieCard = ({ movie }: { movie: Movie }) => {
 
 /* ─── Main HomePage ──────────────────────────────────────── */
 const HomePage = () => {
+    const navigate = useNavigate();
     const [trending, setTrending] = useState<Movie[]>([]);
     const [topRated, setTopRated] = useState<Movie[]>([]);
     const [nowPlaying, setNowPlaying] = useState<Movie[]>([]);
@@ -329,13 +333,13 @@ const HomePage = () => {
     const [rowsLoading, setRowsLoading] = useState(true);
     const [page, setPage] = useState(1);
     const [searchMovie, setSearchMovie] = useState("");
+    const [peopleResults, setPeopleResults] = useState<SearchedPerson[]>([]);
     const [selectedGenre, setSelectedGenre] = useState("");
     const [totalPages, setTotalPages] = useState(1);
 
     // Fetch genres + rows
     useEffect(() => {
         getGenres().then((d) => setGenres(d.genres));
-        setRowsLoading(true);
         Promise.all([
             getTrendingMovies("week"),
             getTopRatedMovies(),
@@ -347,25 +351,49 @@ const HomePage = () => {
         }).finally(() => setRowsLoading(false));
     }, []);
 
+    // Unified people search
+    useEffect(() => {
+        const query = searchMovie.trim();
+        if (!query) return;
+        let active = true;
+        searchPeople(query)
+            .then((d) => {
+                if (active) setPeopleResults(d.results || []);
+            })
+            .catch(() => {
+                if (active) setPeopleResults([]);
+            });
+        return () => { active = false; };
+    }, [searchMovie]);
+
     // Fetch grid movies
     useEffect(() => {
-        setLoading(true);
+        let active = true;
         getMovies(page, selectedGenre, searchMovie)
             .then((d) => {
-                setMovies(d.results);
-                setTotalPages(Math.min(d.total_pages, 500));
+                if (active) {
+                    setMovies(d.results);
+                    setTotalPages(Math.min(d.total_pages, 500));
+                    setLoading(false);
+                }
             })
-            .finally(() => setLoading(false));
+            .catch(() => {
+                if (active) setLoading(false);
+            });
+        return () => { active = false; };
     }, [page, selectedGenre, searchMovie]);
 
     const handleGenreSelect = (id: string) => {
         setSelectedGenre(id);
         setPage(1);
+        setLoading(true);
     };
 
     const handleSearch = (v: string) => {
         setSearchMovie(v);
         setPage(1);
+        setLoading(true);
+        if (!v.trim()) setPeopleResults([]);
     };
 
 
@@ -974,6 +1002,89 @@ const HomePage = () => {
                     margin-left: auto;
                     margin-right: auto;
                 }
+
+                /* ── Unified People Search Results ── */
+                .people-search-results {
+                    margin-bottom: 1.75rem;
+                    padding: 1rem 1.25rem;
+                    background: rgba(255, 255, 255, 0.035);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 1rem;
+                }
+                .people-search-heading {
+                    font-size: 0.92rem;
+                    font-weight: 700;
+                    color: #f1f5f9;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    margin-bottom: 0.85rem;
+                }
+                .people-search-badge {
+                    background: rgba(102, 126, 234, 0.25);
+                    color: #a78bfa;
+                    border: 1px solid rgba(167, 139, 250, 0.4);
+                    font-size: 0.68rem;
+                    font-weight: 700;
+                    padding: 0.1rem 0.5rem;
+                    border-radius: 999px;
+                }
+                .people-search-track {
+                    display: flex;
+                    gap: 0.75rem;
+                    overflow-x: auto;
+                    padding-bottom: 0.4rem;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+                }
+                .person-search-chip {
+                    flex-shrink: 0;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.65rem;
+                    background: rgba(255, 255, 255, 0.06);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    padding: 0.35rem 0.85rem 0.35rem 0.35rem;
+                    border-radius: 999px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                }
+                .person-search-chip:hover {
+                    background: rgba(102, 126, 234, 0.25);
+                    border-color: rgba(102, 126, 234, 0.5);
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+                }
+                .person-chip-img {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    object-fit: cover;
+                }
+                .person-chip-no-img {
+                    width: 36px;
+                    height: 36px;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.1);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 1.1rem;
+                }
+                .person-chip-text {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .person-chip-name {
+                    font-size: 0.82rem;
+                    font-weight: 700;
+                    color: #f1f5f9;
+                    white-space: nowrap;
+                }
+                .person-chip-role {
+                    font-size: 0.68rem;
+                    color: #94a3b8;
+                }
             `}</style>
 
             {/* ── Hero ── */}
@@ -1017,13 +1128,49 @@ const HomePage = () => {
                         <span className="browse-search-icon">🔍</span>
                         <input
                             type="text"
-                            placeholder="Search movies..."
+                            placeholder="Search movies, actors, directors..."
                             className="browse-search"
                             value={searchMovie}
                             onChange={(e) => handleSearch(e.target.value)}
                         />
                     </div>
                 </div>
+
+                {/* ── People Search Results ── */}
+                {searchMovie.trim() && peopleResults.length > 0 && (
+                    <div className="people-search-results">
+                        <h3 className="people-search-heading">
+                            <span>🎭 Actors & Directors</span>
+                            <span className="people-search-badge">{peopleResults.length}</span>
+                        </h3>
+                        <div className="people-search-track">
+                            {peopleResults.slice(0, 15).map((person) => (
+                                <div
+                                    key={person.id}
+                                    className="person-search-chip"
+                                    onClick={() => navigate(`/person/${person.id}`)}
+                                    title={`View ${person.name}'s profile`}
+                                >
+                                    {person.profile_path ? (
+                                        <img
+                                            src={`https://image.tmdb.org/t/p/w185${person.profile_path}`}
+                                            alt={person.name}
+                                            className="person-chip-img"
+                                        />
+                                    ) : (
+                                        <div className="person-chip-no-img">👤</div>
+                                    )}
+                                    <div className="person-chip-text">
+                                        <span className="person-chip-name">{person.name}</span>
+                                        <span className="person-chip-role">
+                                            {person.known_for_department || "Actor"}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <GenreFilter genres={genres} selected={selectedGenre} onSelect={handleGenreSelect} />
 
@@ -1051,7 +1198,10 @@ const HomePage = () => {
                         <button
                             className="page-btn"
                             disabled={page === 1}
-                            onClick={() => setPage((p) => Math.max(p - 1, 1))}
+                            onClick={() => {
+                                setLoading(true);
+                                setPage((p) => Math.max(p - 1, 1));
+                            }}
                         >‹ Prev</button>
 
                         <span className="page-indicator">Page {page} of {totalPages}</span>
@@ -1059,7 +1209,10 @@ const HomePage = () => {
                         <button
                             className="page-btn"
                             disabled={page >= totalPages}
-                            onClick={() => setPage((p) => p + 1)}
+                            onClick={() => {
+                                setLoading(true);
+                                setPage((p) => p + 1);
+                            }}
                         >Next ›</button>
                     </div>
                 )}

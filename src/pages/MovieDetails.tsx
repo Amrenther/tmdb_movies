@@ -1,6 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { getMovieDetails, getMovieReviews, getMovieVideos, getMovieImages, getSimilarMovies } from "../api/tmdbApi";
+import { getMovieDetails, getMovieReviews, getMovieVideos, getMovieImages, getSimilarMovies, getMovieCredits } from "../api/tmdbApi";
 import { useMovieList } from "../context/MovieListContext";
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -55,6 +55,23 @@ interface SimilarMovie {
     poster_path: string | null;
     release_date: string;
     vote_average: number;
+}
+
+interface CastMember {
+    id: number;
+    name: string;
+    character: string;
+    profile_path: string | null;
+    order: number;
+    popularity: number;
+}
+
+interface CrewMember {
+    id: number;
+    name: string;
+    job: string;
+    department: string;
+    profile_path: string | null;
 }
 
 /* ─── Star Rating ─────────────────────────────────────────── */
@@ -328,6 +345,79 @@ const SimilarMovies = ({
     );
 };
 
+/* ─── Cast Carousel Section ──────────────────────────────── */
+const CastSection = ({ cast, loading }: { cast: CastMember[]; loading: boolean }) => {
+    const trackRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
+
+    const scroll = (direction: "left" | "right") => {
+        if (trackRef.current) {
+            const scrollAmount = direction === "left" ? -420 : 420;
+            trackRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+        }
+    };
+
+    if (!loading && cast.length === 0) return null;
+
+    return (
+        <div className="cast-section">
+            <div className="cast-header">
+                <h2 className="section-heading">
+                    <span>🎭 Top Billed Cast</span>
+                    {!loading && cast.length > 0 && (
+                        <span className="section-badge">{cast.length}</span>
+                    )}
+                </h2>
+                <div className="cast-arrows">
+                    <button className="cast-arrow-btn" onClick={() => scroll("left")} aria-label="Scroll cast left">‹</button>
+                    <button className="cast-arrow-btn" onClick={() => scroll("right")} aria-label="Scroll cast right">›</button>
+                </div>
+            </div>
+
+            <div className="cast-track" ref={trackRef}>
+                {loading
+                    ? Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="cast-card-skeleton">
+                            <div className="cast-skeleton-img skeleton-line" />
+                            <div style={{ padding: "0.6rem" }}>
+                                <div className="skeleton-line" style={{ height: 12, width: "75%", marginBottom: "0.4rem" }} />
+                                <div className="skeleton-line" style={{ height: 10, width: "55%" }} />
+                            </div>
+                        </div>
+                    ))
+                    : cast.slice(0, 25).map((member) => (
+                        <div
+                            key={`${member.id}-${member.character || member.order}`}
+                            className="cast-card"
+                            onClick={() => navigate(`/person/${member.id}`)}
+                            title={`${member.name} as ${member.character || "Self"}`}
+                        >
+                            <div className="cast-photo-wrap">
+                                {member.profile_path ? (
+                                    <img
+                                        src={`https://image.tmdb.org/t/p/w185${member.profile_path}`}
+                                        alt={member.name}
+                                        className="cast-photo"
+                                        loading="lazy"
+                                    />
+                                ) : (
+                                    <div className="cast-no-photo">👤</div>
+                                )}
+                                <div className="cast-overlay">
+                                    <span className="cast-view-profile">View Profile →</span>
+                                </div>
+                            </div>
+                            <div className="cast-info">
+                                <span className="cast-name">{member.name}</span>
+                                <span className="cast-character">{member.character || "Self"}</span>
+                            </div>
+                        </div>
+                    ))}
+            </div>
+        </div>
+    );
+};
+
 /* ─── Video Player Section ────────────────────────────────── */
 const VideoSection = ({ videos }: { videos: Video[] }) => {
     const youtubeVideos = videos.filter((v) => v.site === "YouTube");
@@ -379,12 +469,20 @@ const MovieDetails = () => {
 
     const [movieDetails, setMovieDetails] = useState<MovieDetails | null>(null);
     const [reviews, setReviews] = useState<Review[]>([]);
-    const [reviewsLoading, setReviewsLoading] = useState(true);
+    const [loadedReviewsId, setLoadedReviewsId] = useState<number | null>(null);
+    const reviewsLoading = loadedReviewsId !== Number(id);
+
     const [videos, setVideos] = useState<Video[]>([]);
     const [backdrops, setBackdrops] = useState<ImageItem[]>([]);
     const [posters, setPosters] = useState<ImageItem[]>([]);
     const [similarMovies, setSimilarMovies] = useState<SimilarMovie[]>([]);
-    const [similarLoading, setSimilarLoading] = useState(true);
+    const [loadedSimilarId, setLoadedSimilarId] = useState<number | null>(null);
+    const similarLoading = loadedSimilarId !== Number(id);
+
+    const [cast, setCast] = useState<CastMember[]>([]);
+    const [crew, setCrew] = useState<CrewMember[]>([]);
+    const [loadedCreditsId, setLoadedCreditsId] = useState<number | null>(null);
+    const creditsLoading = loadedCreditsId !== Number(id);
 
     useEffect(() => {
         if (!id) return;
@@ -392,10 +490,20 @@ const MovieDetails = () => {
 
         getMovieDetails(Number(id)).then((data) => setMovieDetails(data));
 
-        setReviewsLoading(true);
+        getMovieCredits(Number(id))
+            .then((data) => {
+                setCast(data.cast ?? []);
+                setCrew(data.crew ?? []);
+                setLoadedCreditsId(Number(id));
+            })
+            .catch((err) => console.error("Failed to fetch credits", err));
+
         getMovieReviews(Number(id))
-            .then((data) => setReviews(data.results))
-            .finally(() => setReviewsLoading(false));
+            .then((data) => {
+                setReviews(data.results);
+                setLoadedReviewsId(Number(id));
+            })
+            .catch((err) => console.error("Failed to fetch reviews", err));
 
         getMovieVideos(Number(id)).then((data) => {
             const sorted = [...data.results].sort((a: Video, b: Video) => {
@@ -417,10 +525,12 @@ const MovieDetails = () => {
             setPosters(sortByVote(data.posters ?? []));
         });
 
-        setSimilarLoading(true);
         getSimilarMovies(Number(id))
-            .then((data) => setSimilarMovies(data.results ?? []))
-            .finally(() => setSimilarLoading(false));
+            .then((data) => {
+                setSimilarMovies(data.results ?? []);
+                setLoadedSimilarId(Number(id));
+            })
+            .catch((err) => console.error("Failed to fetch similar movies", err));
     }, [id]);
 
     const handleSimilarSelect = (movieId: number) => {
@@ -912,6 +1022,207 @@ const MovieDetails = () => {
                 .similar-skeleton-img {
                     width: 100%; aspect-ratio: 2/3;
                 }
+
+                /* ════════════════════════════════
+                   KEY CREW IN HERO
+                ════════════════════════════════ */
+                .key-crew-row {
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 0.85rem 1.4rem;
+                    margin-top: 1.1rem;
+                    padding-top: 0.95rem;
+                    border-top: 1px solid rgba(255, 255, 255, 0.08);
+                }
+                .crew-group {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: wrap;
+                    gap: 0.4rem;
+                }
+                .crew-role-label {
+                    font-size: 0.78rem;
+                    font-weight: 700;
+                    color: #94a3b8;
+                    letter-spacing: 0.03em;
+                }
+                .crew-person-chip {
+                    background: rgba(255, 255, 255, 0.07);
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    color: #e2e8f0;
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    padding: 0.22rem 0.65rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+                .crew-person-chip:hover {
+                    background: rgba(102, 126, 234, 0.28);
+                    border-color: rgba(102, 126, 234, 0.6);
+                    color: #fff;
+                    transform: translateY(-1px);
+                }
+
+                /* ════════════════════════════════
+                   CAST SECTION
+                ════════════════════════════════ */
+                .cast-section {
+                    margin-bottom: 2.75rem;
+                }
+                .cast-header {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    margin-bottom: 1rem;
+                }
+                .cast-header .section-heading {
+                    margin-bottom: 0;
+                }
+                .cast-arrows {
+                    display: flex;
+                    gap: 0.4rem;
+                }
+                .cast-arrow-btn {
+                    width: 34px;
+                    height: 34px;
+                    border-radius: 50%;
+                    background: rgba(255, 255, 255, 0.08);
+                    border: 1px solid rgba(255, 255, 255, 0.12);
+                    color: #fff;
+                    font-size: 1.25rem;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    transition: background 0.2s, transform 0.15s;
+                    line-height: 1;
+                }
+                .cast-arrow-btn:hover {
+                    background: rgba(102, 126, 234, 0.35);
+                    border-color: rgba(102, 126, 234, 0.6);
+                    transform: scale(1.08);
+                }
+                .cast-track {
+                    display: flex;
+                    gap: 0.85rem;
+                    overflow-x: auto;
+                    padding-bottom: 0.6rem;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+                }
+                .cast-track::-webkit-scrollbar {
+                    height: 5px;
+                }
+                .cast-track::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.15);
+                    border-radius: 999px;
+                }
+                .cast-card {
+                    flex-shrink: 0;
+                    width: 140px;
+                    border-radius: 0.85rem;
+                    overflow: hidden;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    cursor: pointer;
+                    transition: transform 0.22s, border-color 0.22s, box-shadow 0.22s;
+                    text-align: left;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .cast-card:hover {
+                    transform: translateY(-5px);
+                    border-color: rgba(167, 139, 250, 0.5);
+                    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+                }
+                .cast-photo-wrap {
+                    position: relative;
+                    width: 100%;
+                    aspect-ratio: 2/3;
+                    overflow: hidden;
+                    background: #151520;
+                }
+                .cast-photo {
+                    width: 100%;
+                    height: 100%;
+                    object-fit: cover;
+                    display: block;
+                    transition: transform 0.35s;
+                }
+                .cast-card:hover .cast-photo {
+                    transform: scale(1.06);
+                }
+                .cast-no-photo {
+                    width: 100%;
+                    height: 100%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 2.5rem;
+                    background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.08));
+                    color: #64748b;
+                }
+                .cast-overlay {
+                    position: absolute;
+                    inset: 0;
+                    background: rgba(15, 12, 41, 0.7);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                    transition: opacity 0.2s;
+                    padding: 0.5rem;
+                }
+                .cast-card:hover .cast-overlay {
+                    opacity: 1;
+                }
+                .cast-view-profile {
+                    font-size: 0.7rem;
+                    font-weight: 700;
+                    color: #fff;
+                    background: linear-gradient(135deg, #667eea, #764ba2);
+                    padding: 0.35rem 0.6rem;
+                    border-radius: 999px;
+                    text-align: center;
+                }
+                .cast-info {
+                    padding: 0.6rem 0.65rem 0.75rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 0.18rem;
+                    flex-grow: 1;
+                }
+                .cast-name {
+                    font-size: 0.8rem;
+                    font-weight: 700;
+                    color: #f1f5f9;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    line-height: 1.25;
+                }
+                .cast-character {
+                    font-size: 0.7rem;
+                    color: #94a3b8;
+                    overflow: hidden;
+                    white-space: nowrap;
+                    text-overflow: ellipsis;
+                    line-height: 1.25;
+                }
+                .cast-card-skeleton {
+                    flex-shrink: 0;
+                    width: 140px;
+                    border-radius: 0.85rem;
+                    overflow: hidden;
+                    background: rgba(255, 255, 255, 0.03);
+                    border: 1px solid rgba(255, 255, 255, 0.05);
+                }
+                .cast-skeleton-img {
+                    width: 100%;
+                    aspect-ratio: 2/3;
+                }
             `}</style>
 
             <div className="details-container">
@@ -936,6 +1247,58 @@ const MovieDetails = () => {
                         </div>
                         <p className="overview-heading">Overview</p>
                         <p className="overview-text">{movieDetails?.overview || "No overview available."}</p>
+
+                        {/* Key Crew Badges */}
+                        {(crew.some((c) => c.job === "Director") || crew.some((c) => ["Screenplay", "Writer", "Story"].includes(c.job)) || crew.some((c) => ["Original Music Composer", "Music"].includes(c.job))) && (
+                            <div className="key-crew-row">
+                                {crew.filter((c) => c.job === "Director").length > 0 && (
+                                    <div className="crew-group">
+                                        <span className="crew-role-label">🎬 Director:</span>
+                                        {crew.filter((c) => c.job === "Director").map((d) => (
+                                            <button
+                                                key={`dir-${d.id}`}
+                                                className="crew-person-chip"
+                                                onClick={() => navigate(`/person/${d.id}`)}
+                                                title={`View ${d.name}'s filmography`}
+                                            >
+                                                {d.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                {crew.filter((c) => ["Screenplay", "Writer", "Story"].includes(c.job)).slice(0, 3).length > 0 && (
+                                    <div className="crew-group">
+                                        <span className="crew-role-label">✍️ Writer:</span>
+                                        {crew.filter((c) => ["Screenplay", "Writer", "Story"].includes(c.job)).slice(0, 3).map((w) => (
+                                            <button
+                                                key={`wri-${w.id}`}
+                                                className="crew-person-chip"
+                                                onClick={() => navigate(`/person/${w.id}`)}
+                                                title={`View ${w.name}'s filmography`}
+                                            >
+                                                {w.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                                {crew.filter((c) => ["Original Music Composer", "Music"].includes(c.job)).slice(0, 2).length > 0 && (
+                                    <div className="crew-group">
+                                        <span className="crew-role-label">🎵 Music:</span>
+                                        {crew.filter((c) => ["Original Music Composer", "Music"].includes(c.job)).slice(0, 2).map((c) => (
+                                            <button
+                                                key={`mus-${c.id}`}
+                                                className="crew-person-chip"
+                                                onClick={() => navigate(`/person/${c.id}`)}
+                                                title={`View ${c.name}'s filmography`}
+                                            >
+                                                {c.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
                         {detailSaved && (
                             <div className="detail-actions">
                                 <button
@@ -954,6 +1317,9 @@ const MovieDetails = () => {
                         )}
                     </div>
                 </div>
+
+                {/* ── Top Billed Cast ── */}
+                <CastSection cast={cast} loading={creditsLoading} />
 
                 {/* ── Image Gallery (above Videos) ── */}
                 <ImageGallery backdrops={backdrops} posters={posters} />

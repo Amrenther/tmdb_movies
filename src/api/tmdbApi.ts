@@ -55,3 +55,28 @@ export const getSimilarMovies = async(movieId: number) => {
     const response = await tmdbClient.get(`/movie/${movieId}/similar`);
     return response.data;
 }
+
+export const getMovieCredits = async(movieId: number) => {
+    const response = await tmdbClient.get(`/movie/${movieId}/credits`);
+    return response.data;
+}
+
+export const getPersonDetails = async(personId: number) => {
+    const response = await tmdbClient.get(`/person/${personId}`);
+    return response.data;
+}
+
+export const getPersonMovieCredits = async(personId: number) => {
+    const response = await tmdbClient.get(`/person/${personId}/movie_credits`);
+    return response.data;
+}
+
+export const getPersonImages = async(personId: number) => {
+    const response = await tmdbClient.get(`/person/${personId}/images`);
+    return response.data;
+}
+
+export const searchPeople = async(query: string, page: number = 1) => {
+    const response = await tmdbClient.get(`/search/person?query=${encodeURIComponent(query)}&page=${page}`);
+    return response.data;
+}
