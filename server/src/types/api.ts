@@ -13,3 +13,10 @@ export interface HealthResponse {
   status: string;
   db?: string;
 }
+
+export interface PublicUser {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+}

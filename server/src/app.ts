@@ -7,9 +7,11 @@ import { AppError } from './lib/errors.js';
 import { notFoundHandler } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import healthRoutes from './routes/health.routes.js';
+import authRoutes from './routes/auth.routes.js';
 
 export function createApp(): express.Application {
   const app = express();
+  app.set('trust proxy', 1);
 
   // NFR-SEC-01: Use Helmet. Disable x-powered-by.
   app.use(helmet());
@@ -42,6 +44,7 @@ export function createApp(): express.Application {
 
   // Mount API routes
   app.use('/api/health', healthRoutes);
+  app.use('/api/auth', authRoutes);
 
   // Centralized 404 handler for unknown routes
   app.use(notFoundHandler);
