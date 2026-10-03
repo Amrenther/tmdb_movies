@@ -120,9 +120,9 @@ export const MovieListProvider = ({ children }: { children: ReactNode }) => {
             // Signed in: fetch server lists (v1 no-merge policy: ignores localStorage)
             loadServerLists();
         } else if (prevUserRef.current !== undefined && prevUserRef.current !== null) {
-            // Logged out: revert back to local guest lists
-            setFavorites(load("mv_favorites"));
-            setWatchlist(load("mv_watchlist"));
+            // Logged out: clear account-owned lists
+            setFavorites([]);
+            setWatchlist([]);
             setListError(null);
         }
 
