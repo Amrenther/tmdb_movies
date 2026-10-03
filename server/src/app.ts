@@ -8,6 +8,8 @@ import { notFoundHandler } from './middleware/notFound.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import healthRoutes from './routes/health.routes.js';
 import authRoutes from './routes/auth.routes.js';
+import favoritesRoutes from './routes/favorites.routes.js';
+import watchlistRoutes from './routes/watchlist.routes.js';
 
 export function createApp(): express.Application {
   const app = express();
@@ -45,6 +47,8 @@ export function createApp(): express.Application {
   // Mount API routes
   app.use('/api/health', healthRoutes);
   app.use('/api/auth', authRoutes);
+  app.use('/api/favorites', favoritesRoutes);
+  app.use('/api/watchlist', watchlistRoutes);
 
   // Centralized 404 handler for unknown routes
   app.use(notFoundHandler);

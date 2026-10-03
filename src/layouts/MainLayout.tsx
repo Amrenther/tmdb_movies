@@ -1,13 +1,17 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { useMovieList } from "../context/MovieListContext";
+import { useAuth } from "../context/AuthContext";
+import { AuthModal } from "../components/auth/AuthModal";
 
 const MainLayout = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [authModalOpen, setAuthModalOpen] = useState(false);
     const { favorites, watchlist } = useMovieList();
+    const { user, isLoading: authLoading, logout } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -202,6 +206,162 @@ const MainLayout = () => {
                 .mobile-badge.fav { background: linear-gradient(135deg, #ef4444, #ec4899); }
                 .mobile-badge.watch { background: linear-gradient(135deg, #3b82f6, #6366f1); }
 
+                /* ── Auth Navbar Zone ── */
+                .nav-right {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.85rem;
+                }
+                .nav-auth-desktop {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.6rem;
+                }
+                @media (max-width: 640px) {
+                    .nav-auth-desktop { display: none; }
+                }
+
+                .auth-btn-signin {
+                    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+                    color: #fff;
+                    font-size: 0.82rem;
+                    font-weight: 600;
+                    padding: 0.45rem 1rem;
+                    border-radius: 999px;
+                    border: none;
+                    cursor: pointer;
+                    transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+                    font-family: 'Inter', sans-serif;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.35rem;
+                    box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+                }
+                .auth-btn-signin:hover {
+                    opacity: 0.92;
+                    transform: translateY(-1px);
+                    box-shadow: 0 6px 16px rgba(124, 58, 237, 0.4);
+                }
+
+                .auth-user-pill {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background: rgba(255,255,255,0.06);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    padding: 0.3rem 0.75rem 0.3rem 0.35rem;
+                    border-radius: 999px;
+                    font-size: 0.82rem;
+                    color: #e2e8f0;
+                }
+                .auth-avatar {
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #a78bfa, #818cf8);
+                    color: #0f172a;
+                    font-size: 0.72rem;
+                    font-weight: 800;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    text-transform: uppercase;
+                }
+                .auth-user-name {
+                    font-weight: 600;
+                    max-width: 100px;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                    color: #f1f5f9;
+                }
+                .auth-logout-btn {
+                    background: none;
+                    border: none;
+                    color: #94a3b8;
+                    cursor: pointer;
+                    font-size: 0.75rem;
+                    padding: 0.2rem 0.4rem;
+                    border-radius: 4px;
+                    transition: color 0.2s, background 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+                .auth-logout-btn:hover {
+                    color: #fca5a5;
+                    background: rgba(239,68,68,0.12);
+                }
+
+                .auth-loading-pill {
+                    width: 80px;
+                    height: 30px;
+                    border-radius: 999px;
+                    background: rgba(255,255,255,0.06);
+                    animation: pulse 1.4s ease-in-out infinite;
+                }
+                @keyframes pulse {
+                    0%, 100% { opacity: 0.4; }
+                    50% { opacity: 0.85; }
+                }
+
+                .mobile-auth-divider {
+                    height: 1px;
+                    background: rgba(255,255,255,0.08);
+                    margin: 0.6rem 0.5rem;
+                }
+                .mobile-user-box {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.75rem;
+                    padding: 0.6rem 0.8rem;
+                    background: rgba(255,255,255,0.04);
+                    border-radius: 8px;
+                    border: 1px solid rgba(255,255,255,0.07);
+                }
+                .mobile-user-details {
+                    display: flex;
+                    flex-direction: column;
+                    overflow: hidden;
+                    flex: 1;
+                }
+                .mobile-user-name {
+                    font-size: 0.88rem;
+                    font-weight: 700;
+                    color: #f1f5f9;
+                }
+                .mobile-user-email {
+                    font-size: 0.75rem;
+                    color: #64748b;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                }
+                .mobile-logout-btn {
+                    background: rgba(239,68,68,0.12);
+                    border: 1px solid rgba(239,68,68,0.3);
+                    color: #fca5a5;
+                    font-size: 0.78rem;
+                    font-weight: 600;
+                    padding: 0.35rem 0.7rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    font-family: 'Inter', sans-serif;
+                }
+                .mobile-signin-btn {
+                    background: linear-gradient(135deg, #7c3aed, #4f46e5);
+                    color: #fff;
+                    font-size: 0.9rem;
+                    font-weight: 700;
+                    padding: 0.7rem 1rem;
+                    border-radius: 8px;
+                    border: none;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.5rem;
+                    font-family: 'Inter', sans-serif;
+                }
+
                 /* ── Main ── */
                 .main-content {
                     padding-top: 64px;
@@ -257,12 +417,37 @@ const MainLayout = () => {
                     ))}
                 </div>
 
-                {/* Hamburger */}
-                <button className="nav-hamburger" onClick={() => setMenuOpen((p) => !p)} aria-label="Menu">
-                    <span className="ham-bar" />
-                    <span className="ham-bar" />
-                    <span className="ham-bar" />
-                </button>
+                <div className="nav-right">
+                    {/* Desktop Auth Zone */}
+                    <div className="nav-auth-desktop">
+                        {authLoading ? (
+                            <div className="auth-loading-pill" />
+                        ) : user ? (
+                            <div className="auth-user-pill">
+                                <div className="auth-avatar">{user.name.charAt(0)}</div>
+                                <span className="auth-user-name" title={user.name}>{user.name}</span>
+                                <button className="auth-logout-btn" onClick={logout} title="Sign Out">
+                                    Logout
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                className="auth-btn-signin"
+                                onClick={() => setAuthModalOpen(true)}
+                            >
+                                <span>✨</span>
+                                <span>Sign In</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Hamburger */}
+                    <button className="nav-hamburger" onClick={() => setMenuOpen((p) => !p)} aria-label="Menu">
+                        <span className="ham-bar" />
+                        <span className="ham-bar" />
+                        <span className="ham-bar" />
+                    </button>
+                </div>
             </nav>
 
             {/* Mobile dropdown */}
@@ -283,6 +468,38 @@ const MainLayout = () => {
                             )}
                         </button>
                     ))}
+
+                    <div className="mobile-auth-divider" />
+                    {authLoading ? (
+                        <div className="auth-loading-pill" style={{ margin: "0.5rem auto" }} />
+                    ) : user ? (
+                        <div className="mobile-user-box">
+                            <div className="auth-avatar">{user.name.charAt(0)}</div>
+                            <div className="mobile-user-details">
+                                <span className="mobile-user-name">{user.name}</span>
+                                <span className="mobile-user-email">{user.email}</span>
+                            </div>
+                            <button
+                                className="mobile-logout-btn"
+                                onClick={() => {
+                                    logout();
+                                    setMenuOpen(false);
+                                }}
+                            >
+                                Logout
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            className="mobile-signin-btn"
+                            onClick={() => {
+                                setMenuOpen(false);
+                                setAuthModalOpen(true);
+                            }}
+                        >
+                            ✨ Sign In / Join
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -295,6 +512,9 @@ const MainLayout = () => {
                 <p className="footer-copy">© {new Date().getFullYear()} Amrenther · MovieVerse · All rights reserved.</p>
                 <p className="footer-tmdb">Powered by The Movie Database (TMDB) API</p>
             </footer>
+
+            {/* Auth Modal Overlay */}
+            {authModalOpen && <AuthModal onClose={() => setAuthModalOpen(false)} />}
         </div>
     );
 };

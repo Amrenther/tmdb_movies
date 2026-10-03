@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useMovieList, type SavedMovie } from "../context/MovieListContext";
+import { useAuth } from "../context/AuthContext";
 
 /* ─── Saved Movie Card ───────────────────────────────────── */
 const SavedCard = ({
@@ -7,11 +8,13 @@ const SavedCard = ({
     onRemove,
     removeLabel,
     removeColor,
+    isPending,
 }: {
     movie: SavedMovie;
     onRemove: (id: number) => void;
     removeLabel: string;
     removeColor: string;
+    isPending: boolean;
 }) => {
     const navigate = useNavigate();
     return (
@@ -60,10 +63,15 @@ const SavedCard = ({
                     border: 1px solid rgba(255,255,255,0.12);
                     color: #fff; font-size: 0.62rem; font-weight: 700;
                     padding: 0.2rem 0.5rem; border-radius: 999px;
-                    cursor: pointer; transition: background 0.2s, color 0.2s;
+                    cursor: pointer; transition: background 0.2s, color 0.2s, opacity 0.2s;
                     z-index: 2;
                 }
-                .saved-card-remove:hover { background: ${removeColor}; }
+                .saved-card-remove:hover:not(:disabled) { background: ${removeColor}; }
+                .saved-card-remove:disabled {
+                    opacity: 0.6;
+                    cursor: not-allowed;
+                    background: rgba(0,0,0,0.85);
+                }
                 .saved-card-body { padding: 0.65rem 0.7rem 0.75rem; }
                 .saved-card-title {
                     font-size: 0.8rem; font-weight: 700; color: #e2e8f0;
@@ -88,9 +96,13 @@ const SavedCard = ({
                 <button
                     className="saved-card-remove"
                     title={removeLabel}
-                    onClick={(e) => { e.stopPropagation(); onRemove(movie.id); }}
+                    disabled={isPending}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (!isPending) onRemove(movie.id);
+                    }}
                 >
-                    ✕ Remove
+                    {isPending ? "Removing..." : "✕ Remove"}
                 </button>
             </div>
             <div className="saved-card-body">
@@ -107,7 +119,18 @@ const SavedListPage = ({
 }: {
     type: "favorites" | "watchlist";
 }) => {
-    const { favorites, watchlist, removeFavorite, removeWatchlist } = useMovieList();
+    const {
+        favorites,
+        watchlist,
+        removeFavorite,
+        removeWatchlist,
+        pendingIds,
+        isLoadingLists,
+        listError,
+        clearListError,
+        retryLoadLists,
+    } = useMovieList();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
     const isFav = type === "favorites";
@@ -144,7 +167,7 @@ const SavedListPage = ({
                     justify-content: space-between;
                     flex-wrap: wrap;
                     gap: 1rem;
-                    margin-bottom: 2.5rem;
+                    margin-bottom: 1.5rem;
                     padding-bottom: 1.5rem;
                     border-bottom: 1px solid rgba(255,255,255,0.07);
                 }
@@ -179,12 +202,83 @@ const SavedListPage = ({
                 }
                 .saved-back-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
+                /* Error banner */
+                .saved-error-banner {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    gap: 1rem;
+                    background: rgba(239, 68, 68, 0.12);
+                    border: 1px solid rgba(239, 68, 68, 0.35);
+                    color: #fca5a5;
+                    border-radius: 0.75rem;
+                    padding: 0.75rem 1.25rem;
+                    font-size: 0.85rem;
+                    margin-bottom: 1.75rem;
+                    line-height: 1.5;
+                }
+                .saved-error-actions {
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    flex-shrink: 0;
+                }
+                .saved-error-retry {
+                    background: rgba(239, 68, 68, 0.25);
+                    border: 1px solid rgba(239, 68, 68, 0.5);
+                    color: #fff;
+                    font-size: 0.75rem;
+                    font-weight: 700;
+                    padding: 0.25rem 0.65rem;
+                    border-radius: 6px;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+                .saved-error-retry:hover { background: rgba(239, 68, 68, 0.45); }
+                .saved-error-close {
+                    background: none;
+                    border: none;
+                    color: #fca5a5;
+                    cursor: pointer;
+                    font-size: 0.85rem;
+                    padding: 0.2rem;
+                }
+
+                /* Guest info notice */
+                .saved-guest-banner {
+                    background: rgba(124, 58, 237, 0.08);
+                    border: 1px solid rgba(124, 58, 237, 0.25);
+                    border-radius: 0.75rem;
+                    padding: 0.65rem 1.1rem;
+                    font-size: 0.82rem;
+                    color: #c4b5fd;
+                    margin-bottom: 1.75rem;
+                    display: flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                }
+                .saved-guest-banner strong { color: #fff; }
+
                 .saved-grid {
                     display: grid;
                     grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
                     gap: 1.1rem;
                 }
                 @media (max-width: 480px) { .saved-grid { grid-template-columns: repeat(2, 1fr); } }
+
+                /* Skeleton Cards */
+                .saved-skeleton-card {
+                    aspect-ratio: 2/3.4;
+                    background: rgba(255,255,255,0.04);
+                    border: 1px solid rgba(255,255,255,0.06);
+                    border-radius: 0.85rem;
+                    animation: skeletonPulse 1.4s ease-in-out infinite;
+                }
+                @keyframes skeletonPulse {
+                    0%, 100% { opacity: 0.35; }
+                    50% { opacity: 0.75; }
+                }
 
                 .saved-empty {
                     display: flex;
@@ -221,7 +315,7 @@ const SavedListPage = ({
                     <h1 className="saved-page-title">
                         <span className="saved-page-title-emoji">{emoji}</span>
                         {title}
-                        {movies.length > 0 && (
+                        {!isLoadingLists && movies.length > 0 && (
                             <span className="saved-page-count">{movies.length}</span>
                         )}
                     </h1>
@@ -230,7 +324,42 @@ const SavedListPage = ({
                     </button>
                 </div>
 
-                {movies.length === 0 ? (
+                {/* Recoverable Error Banner */}
+                {listError && (
+                    <div className="saved-error-banner" role="alert">
+                        <span>⚠️ {listError}</span>
+                        <div className="saved-error-actions">
+                            <button className="saved-error-retry" onClick={retryLoadLists}>
+                                Retry
+                            </button>
+                            <button
+                                className="saved-error-close"
+                                onClick={clearListError}
+                                aria-label="Dismiss error"
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Guest Info Banner */}
+                {!user && (
+                    <div className="saved-guest-banner">
+                        <span>
+                            💡 <strong>Guest mode:</strong> These movies are saved locally on this browser. Sign in anytime to sync your {type} securely across devices.
+                        </span>
+                    </div>
+                )}
+
+                {/* Loading Skeleton */}
+                {isLoadingLists ? (
+                    <div className="saved-grid">
+                        {[...Array(8)].map((_, i) => (
+                            <div key={i} className="saved-skeleton-card" />
+                        ))}
+                    </div>
+                ) : movies.length === 0 ? (
                     <div className="saved-empty">
                         <div className="saved-empty-emoji">{emptyEmoji}</div>
                         <div className="saved-empty-title">Nothing here yet</div>
@@ -248,6 +377,7 @@ const SavedListPage = ({
                                 onRemove={onRemove}
                                 removeLabel={removeLabel}
                                 removeColor={removeColor}
+                                isPending={pendingIds.has(movie.id)}
                             />
                         ))}
                     </div>
