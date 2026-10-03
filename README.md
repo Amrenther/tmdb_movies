@@ -1,14 +1,19 @@
 # 🎬 MovieVerse
 
-> A sleek, dark-themed movie discovery web application powered by the **TMDB (The Movie Database) API** — built with React 19, TypeScript, Vite, and Tailwind CSS v4.
-> Now featuring **Favorites** ❤️ and **Watchlist** 🔖 with persistent localStorage and dedicated pages.
+> A sleek, high-performance, full-stack movie discovery web application powered by **The Movie Database (TMDB) API**, built with **React 19**, **TypeScript**, **Vite**, **Tailwind CSS v4**, and an **Express 5 + Prisma 7 + PostgreSQL** backend.
+> Featuring secure **User Authentication** 🔐, account-owned cloud **Favorites** ❤️ and **Watchlist** 🔖, guest `localStorage` fallback, and an immersive **Cinematic Web Audio Intro Sequence** 🔊.
 
-![MovieVerse Banner](https://img.shields.io/badge/MovieVerse-TMDB%20Powered-blueviolet?style=for-the-badge&logo=themoviedatabase)
+![MovieVerse Banner](https://img.shields.io/badge/MovieVerse-Full--Stack%20Web%20App-blueviolet?style=for-the-badge&logo=themoviedatabase)
 ![React](https://img.shields.io/badge/React-19-61dafb?style=for-the-badge&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=for-the-badge&logo=typescript)
 ![Vite](https://img.shields.io/badge/Vite-7-646cff?style=for-the-badge&logo=vite)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4-38bdf8?style=for-the-badge&logo=tailwindcss)
+![Node.js](https://img.shields.io/badge/Node.js-24%20LTS-339933?style=for-the-badge&logo=nodedotjs)
+![Express](https://img.shields.io/badge/Express-5-000000?style=for-the-badge&logo=express)
+![Prisma](https://img.shields.io/badge/Prisma-7-2D3748?style=for-the-badge&logo=prisma)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon%20Serverless-4169E1?style=for-the-badge&logo=postgresql)
 ![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel)
+![Backend on Render](https://img.shields.io/badge/Backend%20on-Render-46E3B7?style=for-the-badge&logo=render)
 
 ---
 
@@ -16,454 +21,437 @@
 
 - [Overview](#-overview)
 - [Live Demo](#-live-demo)
-- [Features](#-features)
+- [Architecture & Topology](#-architecture--topology)
+- [Key Features](#-key-features)
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
-- [Pages & Components](#-pages--components)
-- [State Management](#-state-management)
-- [API Integration](#-api-integration)
-- [Getting Started](#-getting-started)
+- [State Management & Data Flow](#-state-management--data-flow)
+- [API Reference](#-api-reference)
+- [Getting Started & Local Development](#-getting-started--local-development)
+- [Available Scripts](#-available-scripts)
 - [Environment Variables](#-environment-variables)
-- [Deployment](#-deployment)
+- [Production Deployment Guide ($0 Hobby Tier)](#-production-deployment-guide-0-hobby-tier)
+- [Operational Characteristics & Cold Starts](#-operational-characteristics--cold-starts)
+- [Testing & Quality Assurance](#-testing--quality-assurance)
+- [Key Design Decisions](#-key-design-decisions)
 - [Changelog](#-changelog)
 - [Contributing](#-contributing)
 - [License](#-license)
+- [About the Author](#-about-the-author)
 
 ---
 
 ## 🌟 Overview
 
-**MovieVerse** is a full-featured movie discovery platform that lets users explore trending films, browse by genre, search titles, watch trailers, view image galleries, read community reviews, and now **save movies to a personal Favorites list or Watchlist** — all in a premium, dark-mode interface.
+**MovieVerse** is an end-to-end full-stack movie discovery platform. Users can explore trending films, browse by genres, search millions of titles in real time, watch official trailers, view high-definition image galleries, read community reviews, and save movies to **personal Favorites and Watchlists**.
 
-The app fetches real-time data from the [TMDB REST API v3](https://developer.themoviedb.org/docs) and presents it through a responsive, animated UI with smooth micro-interactions and glassmorphism design elements. All user lists are persisted to `localStorage` so they survive page refreshes without any backend.
+The application combines a high-speed browser client with a secure, cloud-persisted identity backend:
+- **Direct TMDB Browsing**: Movie catalogs, images, trailers, and reviews are queried directly from the browser to TMDB's edge network for zero latency.
+- **Account Persistence**: Users can register and log in to persist their Favorites and Watchlists across browsers and devices using **PostgreSQL via Prisma 7**.
+- **Guest Flexibility**: Unregistered guests can immediately save movies locally using `localStorage` without hitting any barriers.
+- **Cinematic Experience**: First-time visitors are welcomed with a synchronized Web Audio API intro sequence and animated title curtain.
 
 ---
 
 ## 🚀 Live Demo
 
-> 🔗 **[https://tmdb-movies-tau.vercel.app](https://tmdb-movies-tau.vercel.app)** *(Deployed on Vercel)*
-
----
-
-## ✨ Features
-
-### 🏠 Home Page
-| Feature | Description |
-|---|---|
-| **Hero Spotlight** | Auto-rotating hero banner cycling through top 6 trending films every 6 seconds with thumbnail strip, dot indicators, and ❤️/🔖 action buttons |
-| **Trending Movies** | Horizontal scrollable row of weekly trending movies |
-| **Top Rated Movies** | Horizontal scrollable row of all-time highest-rated films |
-| **Now Playing** | Horizontal scrollable row of currently playing movies |
-| **Browse Grid** | Paginated movie grid (up to 500 pages) with URL-encoded search |
-| **Genre Filtering** | One-click genre pill filter that resets pagination automatically |
-| **Live Search** | Real-time movie search using TMDB's `/search/movie` endpoint |
-| **Stats Bar** | Animated stats strip showing platform-wide metrics |
-| **Skeleton Loading** | Shimmer skeleton cards displayed during all data fetches |
-| **Responsive Design** | Fully mobile-responsive with hamburger menu and adaptive grids |
-| **Card Action Buttons** | Hover-revealed ❤️ Favorite and 🔖 Watchlist toggle buttons on every movie card |
-
-### 🎬 Movie Details Page
-| Feature | Description |
-|---|---|
-| **Hero Card** | Poster, title, tagline, genres, runtime, rating, vote count, overview, and action buttons |
-| **Add to Favorites** | Pill button below the overview — toggles between ❤️ Favorited and 🤍 Add to Favorites with red active state |
-| **Add to Watchlist** | Pill button below the overview — toggles between 🔖 In Watchlist and 🏷️ Add to Watchlist with blue active state |
-| **Video Player** | Embedded YouTube player for trailers, teasers, clips & featurettes, sorted by official trailers first |
-| **Video Strip** | Clickable thumbnail row for all available YouTube videos |
-| **Image Gallery** | Tabbed Backdrops/Posters gallery with lazy-loaded images, "Show all" toggle |
-| **Lightbox** | Full-screen image viewer with keyboard navigation (← → Esc) and thumbnail strip |
-| **Community Reviews** | User review cards with avatar, star rating, collapsible long-form content |
-| **Similar Movies** | Horizontally scrollable row of similar movie recommendations |
-| **Back Navigation** | One-click back button to return to the home page |
-
-### ❤️ Favorites Page (`/favorites`)
-| Feature | Description |
-|---|---|
-| **Movie Grid** | Responsive grid of all favorited movies, matching the browse grid aesthetic |
-| **Remove Button** | "✕ Remove" button on each card (appears always, not on hover) with red hover color |
-| **Empty State** | Beautiful empty state with 💔 emoji, descriptive text, and an "Explore Movies" CTA button |
-| **Count Badge** | Live count badge on the navbar Favorites link (red gradient, hidden when 0) |
-| **Persistence** | Saved to `localStorage` key `mv_favorites` — survives page refresh and browser restarts |
-
-### 🔖 Watchlist Page (`/watchlist`)
-| Feature | Description |
-|---|---|
-| **Movie Grid** | Responsive grid of all watchlisted movies |
-| **Remove Button** | "✕ Remove" button on each card with blue hover color |
-| **Empty State** | Beautiful empty state with 📭 emoji and "Explore Movies" CTA |
-| **Count Badge** | Live count badge on the navbar Watchlist link (blue gradient, hidden when 0) |
-| **Persistence** | Saved to `localStorage` key `mv_watchlist` |
-
-### 🎨 Design & UX
-- **Dark glassmorphism** aesthetic (`#0a0a0f` base, blurred panels with subtle borders)
-- **Animated hero** with `heroFade` and `slideUp` keyframe transitions
-- **Shimmer skeleton** loaders matching card aspect ratios
-- **Sticky transparent navbar** that gains a frosted-glass blur on scroll, with live count badges
-- **Micro-interactions** on all interactive elements (cards, buttons, genre pills, action buttons)
-- **Inter font** loaded from Google Fonts for consistent, modern typography
-- **Gradient accents** — purple `#667eea → #764ba2`, red `#ef4444 → #ec4899` (Favorites), blue `#3b82f6 → #6366f1` (Watchlist)
-
----
-
-## 🛠 Tech Stack
-
-| Layer | Technology |
-|---|---|
-| **Framework** | [React 19](https://react.dev/) |
-| **Language** | [TypeScript 5.9](https://www.typescriptlang.org/) |
-| **Build Tool** | [Vite 7](https://vitejs.dev/) |
-| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) + Vanilla CSS-in-JSX |
-| **Routing** | [React Router DOM v7](https://reactrouter.com/) |
-| **HTTP Client** | [Axios](https://axios-http.com/) |
-| **Linting** | [ESLint 9](https://eslint.org/) + TypeScript ESLint |
-| **Deployment** | [Vercel](https://vercel.com/) |
-| **Data Source** | [TMDB API v3](https://developer.themoviedb.org/) |
-
----
-
-## 📁 Project Structure
-
-```
-tmdb_movies/
-├── public/                   # Static assets
-├── src/
-│   ├── api/
-│   │   ├── tmdbClient.ts     # Axios instance configured with base URL & API key
-│   │   └── tmdbApi.ts        # All TMDB API call functions
-│   ├── context/
-│   │   └── MovieListContext.tsx  # ✨ NEW — Favorites & Watchlist context + localStorage
-│   ├── layouts/
-│   │   └── MainLayout.tsx    # Navbar (with badges) + Footer wrapper with scroll detection
-│   ├── pages/
-│   │   ├── HomePage.tsx      # Hero, rows, browse grid, search, genre filter, action buttons
-│   │   ├── MovieDetails.tsx  # Movie info, videos, gallery, reviews, similar, action buttons
-│   │   └── SavedPages.tsx    # ✨ NEW — FavoritesPage & WatchlistPage
-│   ├── App.tsx               # Route declarations (/, /movie/:id, /favorites, /watchlist)
-│   ├── main.tsx              # React DOM root wrapped with MovieListProvider
-│   ├── index.css             # Global base styles
-│   └── App.css               # App-level styles
-├── index.html                # HTML entry point
-├── vite.config.ts            # Vite + Tailwind CSS v4 plugin config
-├── vercel.json               # SPA rewrite rule for client-side routing
-├── tsconfig.json             # TypeScript project references
-├── tsconfig.app.json         # App TypeScript config
-├── tsconfig.node.json        # Node TypeScript config
-├── eslint.config.js          # ESLint flat config
-└── package.json              # Dependencies & scripts
-```
-
----
-
-## 📄 Pages & Components
-
-### `MainLayout.tsx`
-The top-level layout component that wraps all pages via React Router's `<Outlet />`.
-
-- **Navbar**: Fixed 64px bar with transparent-to-frosted scroll transition. Contains the **MovieVerse** brand logo and three nav links — **Home**, **Favorites** (❤️), and **Watchlist** (🔖). The latter two display live count badges that update instantly as movies are saved. Mobile breakpoint shows a hamburger menu with the same links and badges.
-- **Footer**: Minimal footer crediting the app and TMDB API.
-
-### `HomePage.tsx`
-The main landing page, composed of several sub-components:
-
-| Component | Role |
-|---|---|
-| `HeroSpotlight` | Auto-rotating backdrop hero with dot indicators, thumbnail strip, "View Details", ❤️ Favorite, and 🔖 Watchlist buttons |
-| `StatsBar` | Statistics strip (500k+ Movies, 2M+ Reviews, 50+ Languages, 100k+ TV Shows) |
-| `MovieRow` | Reusable horizontal scrollable section with left/right arrow buttons and `ref`-based smooth scrolling |
-| `GenreFilter` | Pill button row that filters the browse grid by TMDB genre ID |
-| `MovieCard` | Poster card with overlay play button, star rating badge, title, year, genre tags, and **hover-revealed ❤️/🔖 action buttons** |
-| `GridMovieCard` | Full-width grid variant of MovieCard used in the browse section, also with action buttons |
-| `SkeletonCard` | Animated shimmer placeholder matching MovieCard dimensions |
-
-**State management** uses `useState` + `useEffect` hooks with parallel `Promise.all` for the three horizontal rows and a separate effect for the paginated browse grid.
-
-### `MovieDetails.tsx`
-Comprehensive single-movie detail view loaded by route `/movie/:id`.
-
-| Component | Role |
-|---|---|
-| `VideoSection` | YouTube embed player with a sortable video strip (official trailers first) |
-| `ImageGallery` | Tabbed Backdrops/Posters grid with "Show all" toggle |
-| `Lightbox` | Full-screen image modal with keyboard navigation and thumbnail strip |
-| `ReviewCard` | Individual review with avatar (or initials fallback), star rating, collapsible content |
-| `SimilarMovies` | Horizontal scroll track for related film recommendations |
-| `StarRating` | Reusable 5-star visual component derived from TMDB's 10-point scale |
-| **Action buttons** | "Add to Favorites" and "Add to Watchlist" pill buttons in the hero card, with colored active states |
-
-### `SavedPages.tsx` ✨ New
-Contains two named exports that share a single `SavedListPage` base component:
-
-| Export | Route | Description |
-|---|---|---|
-| `FavoritesPage` | `/favorites` | Grid of all favorited movies with red remove buttons and 💔 empty state |
-| `WatchlistPage` | `/watchlist` | Grid of all watchlisted movies with blue remove buttons and 📭 empty state |
-
-Both pages share the `SavedCard` sub-component which renders a poster card with an always-visible "✕ Remove" button and navigates to the movie detail on click.
-
-### `MovieListContext.tsx` ✨ New
-A React Context provider wrapping the entire app (mounted in `main.tsx`):
-
-```typescript
-// Exposed interface
-{
-  favorites: SavedMovie[];       // list of favorited movies
-  watchlist: SavedMovie[];       // list of watchlisted movies
-  toggleFavorite(movie): void;   // add if absent, remove if present
-  toggleWatchlist(movie): void;  // add if absent, remove if present
-  isFavorite(id): boolean;
-  isInWatchlist(id): boolean;
-  removeFavorite(id): void;
-  removeWatchlist(id): void;
-}
-```
-
-All state is synced to `localStorage` via `useEffect` on every change.
-
----
-
-## 🗄 State Management
-
-MovieVerse uses **React Context API** for global client-side state — no Redux or Zustand needed at this scale.
-
-### `MovieListContext` flow
-
-```
-main.tsx
-  └─ <MovieListProvider>        ← wraps entire app
-       └─ <App />
-            ├─ MainLayout       ← reads favorites.length, watchlist.length for badges
-            ├─ HomePage         ← MovieCard / GridMovieCard / HeroSpotlight call toggleFavorite/toggleWatchlist
-            ├─ MovieDetails     ← hero card calls toggleFavorite/toggleWatchlist
-            ├─ FavoritesPage    ← reads favorites[], calls removeFavorite()
-            └─ WatchlistPage    ← reads watchlist[], calls removeWatchlist()
-```
-
-### `SavedMovie` shape (shared type)
-```typescript
-interface SavedMovie {
-    id: number;
-    title: string;
-    poster_path: string | null;
-    backdrop_path?: string | null;
-    release_date: string;
-    vote_average: number;
-    overview?: string;
-    genre_ids?: number[];
-}
-```
-
----
-
-## 🔌 API Integration
-
-All TMDB calls are centralized in `src/api/`:
-
-### `tmdbClient.ts`
-```typescript
-import axios from "axios";
-
-export const tmdbClient = axios.create({
-    baseURL: "https://api.themoviedb.org/3",
-    params: {
-        api_key: import.meta.env.VITE_TMDB_API_KEY,
-    }
-});
-```
-
-### `tmdbApi.ts` — Exported functions
-
-| Function | Endpoint | Description |
-|---|---|---|
-| `getMovies(page, genreId, searchMovie?)` | `/discover/movie` or `/search/movie` | Paginated movie list, optionally filtered by genre or search query |
-| `getGenres()` | `/genre/movie/list` | Full list of movie genre IDs and names |
-| `getTrendingMovies(timeWindow)` | `/trending/movie/day\|week` | Trending movies for a given time window |
-| `getTopRatedMovies()` | `/movie/top_rated` | All-time highest rated movies |
-| `getNowPlayingMovies()` | `/movie/now_playing` | Currently showing in cinemas |
-| `getMovieDetails(movieId)` | `/movie/:id` | Full metadata for a single movie |
-| `getMovieReviews(movieId)` | `/movie/:id/reviews` | Community written reviews |
-| `getMovieVideos(movieId)` | `/movie/:id/videos` | Trailers, teasers, clips from YouTube |
-| `getMovieImages(movieId)` | `/movie/:id/images` | Backdrops and posters (EN + untagged) |
-| `getSimilarMovies(movieId)` | `/movie/:id/similar` | Movies similar to the given title |
+> 🔗 **Frontend (Vercel)**: [https://tmdb-movies-tau.vercel.app](https://tmdb-movies-tau.vercel.app)  
+> 🔗 **Backend API (Render)**: [https://movieverse-api.onrender.com/api/health](https://movieverse-api.onrender.com/api/health)
 
 ---
 
 ## 🏗️ Architecture & Topology
 
-MovieVerse is designed as a secure, high-performance, **$0 hobby-tier full-stack application**:
+MovieVerse operates on a **100% $0 hobby-tier cloud topology** designed for security, zero maintenance cost, and cookie isolation immunity:
 
 ```text
- ┌──────────────────────────────────────────────────────────────┐
- │                      Browser Client                          │
- └──────────────┬───────────────────────────────┬───────────────┘
-                │                               │
-                │ Direct TMDB API requests      │ Relative /api/* requests
-                │ (no proxy, client key)        │ (credentials: "include")
-                ▼                               ▼
- ┌──────────────────────────────┐   ┌───────────────────────────┐
- │   api.themoviedb.org         │   │   Vercel Hobby Edge       │
- │   (TMDB REST API v3)         │   │   (React 19 SPA)          │
- └──────────────────────────────┘   └───────────┬───────────────┘
-                                                │
-                                                │ External Rewrite /api/:path*
-                                                │ (Same-Origin Cookie Proxy)
-                                                ▼
-                                    ┌───────────────────────────┐
-                                    │   Render Free Web Service │
-                                    │   (Node 24 + Express 5)   │
-                                    └───────────┬───────────────┘
-                                                │
-                                                │ Prisma 7 + PostgreSQL Adapter
-                                                ▼
-                                    ┌───────────────────────────┐
-                                    │   Neon Serverless Postgres│
-                                    │   (Free Database Tier)    │
-                                    └───────────────────────────┘
+ ┌────────────────────────────────────────────────────────────────────────┐
+ │                           Browser Client                               │
+ └──────────────┬──────────────────────────────────────────┬──────────────┘
+                │                                          │
+                │ Direct TMDB Queries                      │ Relative /api/* Calls
+                │ (Client API Key, No Proxy)               │ (credentials: "include")
+                ▼                                          ▼
+ ┌──────────────────────────────┐              ┌──────────────────────────┐
+ │   api.themoviedb.org         │              │   Vercel Hobby Edge      │
+ │   (TMDB REST API v3)         │              │   (React 19 SPA)         │
+ └──────────────────────────────┘              └───────────┬──────────────┘
+                                                           │
+                                                           │ Edge Rewrite: /api/:path*
+                                                           │ (Same-Origin Cookie Proxy)
+                                                           ▼
+                                               ┌──────────────────────────┐
+                                               │  Render Free Web Service │
+                                               │  (Node 24 + Express 5)   │
+                                               └───────────┬──────────────┘
+                                                           │
+                                                           │ Prisma 7 + PostgreSQL Pool
+                                                           ▼
+                                               ┌──────────────────────────┐
+                                               │  Neon Serverless Postgres│
+                                               │  (Free Database Tier)    │
+                                               └──────────────────────────┘
 ```
 
-- **Zero Paid Services**: Strict adherence to free tiers (Vercel Hobby + Render Free + Neon Free).
-- **Direct TMDB Access**: The backend never proxies TMDB data; movies are fetched directly from the browser for maximum speed and minimal backend bandwidth.
-- **Same-Origin API Rewrite**: Vercel proxies `/api/*` requests to Render at the edge. The browser communicates with relative `/api` paths, ensuring session cookies (`mv_session`) remain first-party and immune to third-party cookie restrictions.
-- **Stateless Auth**: Signed HS256 JWTs stored in `httpOnly`, `SameSite=Lax`, `Secure` cookies with 7-day expiration.
-- **CSRF & Security**: Helmet security headers, `X-Powered-By` disabled, and mandatory `Origin` verification on all state-changing endpoints (`POST`, `PUT`, `DELETE`).
+### Architectural Principles
+1. **Zero Paid Services (`NFR-COST-01`)**: Built purely on generous free tiers (Vercel Hobby + Render Free Web Service + Neon Serverless PostgreSQL).
+2. **No TMDB Proxying**: TMDB calls never route through the Express backend, preserving backend bandwidth and ensuring snappy video/browse response times.
+3. **Same-Origin API Rewrite**: Vercel rewrites `/api/:path*` to Render at the network layer. The browser calls relative `/api` paths, keeping auth cookies (`mv_session`) strictly **first-party** (`SameSite=Lax`), preventing third-party cookie blocking in modern browsers.
+4. **Stateless JWT Sessions**: 7-day signed HS256 JWT cookies verified on each request. No Redis or database session tables needed.
+5. **CSRF Protection**: All state-changing requests (`POST`, `PUT`, `DELETE`) require a matching `Origin` header validated by Express middleware.
 
 ---
 
-## 🚀 Getting Started
+## ✨ Key Features
+
+### 🔊 Cinematic Web Audio Intro Sequence
+- **Synthesized Audio**: Dynamic frequency oscillator chords synthesized in real-time via the browser's native **Web Audio API** — no heavy `.mp3` audio files downloaded.
+- **Cinematic Animation**: Title letter transitions, glowing light flares, and smooth curtain reveals.
+- **User Controls**: Skip button, volume toggle, and automatic session suppression so returning users aren't interrupted.
+
+### 🏠 Home & Discovery
+- **Hero Spotlight**: Auto-rotating hero banner showcasing top trending films with background backdrops, thumbnail navigation, and instant ❤️/🔖 action buttons.
+- **Curated Rows**: Smooth horizontal scroll rows for *Weekly Trending*, *Top Rated*, and *Now Playing* movies with touch/trackpad and button navigation.
+- **Browse & Genre Filtering**: Paginated movie grid (up to 500 pages) with instant genre pill filtering.
+- **Live Search**: Real-time movie title search with URL-encoded parameters for shareable search links.
+- **Shimmer Skeletons**: Tailored loading skeletons prevent layout shifts while data is fetched.
+
+### 🎬 Comprehensive Movie Details (`/movie/:id`)
+- **Hero Card**: High-res backdrop, poster, tagline, runtime, genre pills, user rating badge, and action toggles.
+- **Interactive Video Player**: Embedded YouTube player sorting official trailers first, teasers, and clips with a clickable thumbnail strip.
+- **Image Gallery & Lightbox**: High-res backdrops and posters with tabbed filtering, keyboard-controlled full-screen lightbox modal (←, →, Esc).
+- **Community Reviews**: User reviews with star ratings, avatar fallbacks, and collapsible read-more toggles.
+- **Similar Recommendations**: Scrollable row of related films based on TMDB recommendation models.
+
+### 🔐 Authentication & Session Security
+- **Signup & Login**: Clean modal dialog with smooth tab switching and form validation powered by **Zod**.
+- **Password Security**: Passwords hashed with **bcryptjs** (cost factor 12) — plain text passwords and hashes are never exposed in responses or logs.
+- **Session Restoration**: Seamless automatic authentication check (`GET /api/auth/me`) on application mount.
+- **Rate Limiting**: Express in-memory throttling (20 requests per 15 minutes per IP) protects auth endpoints against brute force without requiring Redis.
+- **Safe Logout**: Instant cookie clearing (`POST /api/auth/logout`) and local UI state reset.
+
+### ❤️ Cloud Favorites & 🔖 Watchlist
+- **Dual-Mode Persistence**:
+  - **Logged-in users**: Lists are synced to Neon PostgreSQL via `/api/favorites` and `/api/watchlist`.
+  - **Guests**: Lists are stored in `localStorage` (`mv_favorites`, `mv_watchlist`) with zero barriers.
+- **Optimistic UI with Rollback**: Instant button state updates when adding or removing movies, with automatic rollback if a network error occurs.
+- **Concurrency Hardening**: Toggle endpoints handle concurrent race conditions atomically to prevent duplicate database rows or 500 errors.
+- **Dedicated List Pages**: `/favorites` and `/watchlist` routes featuring responsive movie cards, count badges in the navigation bar, and empty-state placeholders.
+
+---
+
+## 🛠 Tech Stack
+
+### Frontend
+| Technology | Version | Purpose |
+|---|---|---|
+| **React** | 19.2.0 | Core UI library |
+| **TypeScript** | 5.9.3 | Type-safe application development |
+| **Vite** | 7.3.1 | Lightning-fast development server & bundler |
+| **Tailwind CSS** | 4.1.18 | Utility-first responsive styling |
+| **React Router** | 7.13.0 | Declarative client-side routing |
+| **Axios** | 1.13.5 | HTTP client for TMDB and backend API |
+| **Web Audio API** | Native | Real-time synthesized audio for intro sequence |
+
+### Backend
+| Technology | Version | Purpose |
+|---|---|---|
+| **Node.js** | 24.21.0 LTS | High-performance server runtime |
+| **Express** | 5.2.1 | Modern REST API framework |
+| **Prisma** | 7.10.0 | Type-safe ORM & database migrations |
+| **PostgreSQL** | 16+ | Managed relational persistence (Neon Serverless) |
+| **Zod** | 4.6.5 | Request payload & environment variable validation |
+| **bcryptjs** | 3.0.3 | Password hashing with cost factor 12 |
+| **jsonwebtoken** | 9.0.3 | Cryptographically signed HS256 JWT cookies |
+| **Helmet** | 8.3.0 | Secure HTTP response headers |
+| **express-rate-limit** | 8.7.0 | In-memory throttling for authentication routes |
+| **CORS** | 2.8.6 | Strict origin allowlist and credential support |
+
+### Infrastructure & DevOps
+| Platform / Tool | Role |
+|---|---|
+| **Vercel** | Production React SPA hosting + Edge `/api/*` rewrite proxy |
+| **Render** | Free-tier Node.js Web Service for Express REST API |
+| **Neon** | Serverless PostgreSQL database (with connection pooling) |
+| **Node.js Test Runner** | Native `node:test` integration testing suite |
+
+---
+
+## 📁 Project Structure
+
+```text
+tmdb_movies/
+├── public/                       # Static public assets
+├── prisma/
+│   ├── schema.prisma             # Prisma schema (User, Favorite, WatchlistItem)
+│   ├── prisma.config.ts          # Direct database connection config for migrations
+│   └── migrations/               # Committed PostgreSQL migrations
+├── server/
+│   ├── dist/                     # Compiled production JavaScript (git-ignored)
+│   └── src/
+│       ├── index.ts              # Process entry point: database connection & server listen
+│       ├── app.ts                # Express application setup, middleware, and route mounting
+│       ├── config/
+│       │   └── env.ts            # Strict environment variable validation using Zod
+│       ├── lib/
+│       │   ├── prisma.ts         # Shared pooled PrismaClient instance
+│       │   ├── jwt.ts            # Token signing, verification, and cookie options
+│       │   ├── errors.ts         # Standardized AppError and HTTP error helpers
+│       │   └── logger.ts         # Sanitized request logging (no credentials or cookies)
+│       ├── middleware/
+│       │   ├── requireAuth.ts    # Session cookie verification & req.user attachment
+│       │   ├── requireOrigin.ts  # CSRF Origin validation for mutating requests
+│       │   ├── rateLimit.ts      # Auth route brute-force protection
+│       │   ├── notFound.ts       # Standardized 404 JSON response handler
+│       │   └── errorHandler.ts   # Centralized error mapping & envelope formatting
+│       ├── mappers/
+│       │   └── savedMovie.ts     # Maps Prisma database columns to TMDB JSON format
+│       ├── routes/
+│       │   ├── health.routes.ts  # GET /api/health (database connectivity check)
+│       │   ├── auth.routes.ts    # POST /signup, /login, /logout, GET /me
+│       │   ├── favorites.routes.ts # GET, PUT, DELETE, POST /toggle favorites
+│       │   └── watchlist.routes.ts # GET, PUT, DELETE, POST /toggle watchlist
+│       ├── schemas/
+│       │   ├── auth.schema.ts    # Zod schemas for signup and login
+│       │   └── savedMovie.schema.ts # Zod schemas for saved movies & movieId params
+│       └── types/
+│           ├── api.ts            # API request/response TypeScript interfaces
+│           └── express.d.ts      # Express Request type extensions (req.user)
+├── src/                          # Vite + React 19 Frontend
+│   ├── api/
+│   │   ├── serverClient.ts       # Axios client for /api backend routes
+│   │   ├── tmdbClient.ts         # Axios client for direct TMDB queries
+│   │   └── tmdbApi.ts            # TMDB catalog API functions
+│   ├── components/
+│   │   ├── auth/
+│   │   │   └── AuthModal.tsx     # Animated Signup / Login dialog modal
+│   │   └── intro/
+│   │       └── IntroLoader.tsx   # Cinematic Web Audio intro sequence
+│   ├── context/
+│   │   ├── AuthContext.tsx       # Global authentication state & session hooks
+│   │   └── MovieListContext.tsx  # Dual-mode (cloud + localStorage) list management
+│   ├── layouts/
+│   │   └── MainLayout.tsx        # Sticky navbar, count badges, auth button, footer
+│   ├── pages/
+│   │   ├── HomePage.tsx          # Hero, rows, browse grid, filters, search
+│   │   ├── MovieDetails.tsx      # Movie info, trailer player, gallery, reviews
+│   │   └── SavedPages.tsx        # FavoritesPage and WatchlistPage grids
+│   ├── App.tsx                   # Route declarations
+│   ├── main.tsx                  # React entry point wrapped with providers
+│   └── index.css                 # Tailwind CSS directives and custom animations
+├── tests/
+│   └── api/                      # Automated API Integration Test Suite
+│       ├── health.test.ts        # Health check and 404 envelope tests
+│       ├── auth.test.ts          # Auth, cookies, bcrypt, and JWT verification tests
+│       ├── lists.test.ts         # Lists upsert, isolation, and concurrency tests
+│       └── security.test.ts      # CSRF Origin, Helmet, and envelope tests
+├── .env.example                  # Environment variable template with documentation
+├── package.json                  # Root scripts and unified dependencies
+├── render.yaml                   # Render Blueprint Infrastructure specification
+├── vercel.json                   # Vercel SPA routing and /api/* edge rewrite config
+├── tsconfig.json                 # TypeScript project configuration
+├── tsconfig.server.json          # Strict TypeScript configuration for server
+└── vite.config.ts                # Vite build and development proxy configuration
+```
+
+---
+
+## 🗄 State Management & Data Flow
+
+MovieVerse uses React's native Context API for state management:
+
+### 1. `AuthContext`
+Tracks the active user session:
+- Calls `GET /api/auth/me` on initial page load.
+- Provides `user`, `isAuthenticated`, `login()`, `signup()`, `logout()`, and `openAuthModal()`.
+- Automatically prompts `MovieListContext` to fetch user lists on login or switch to guest `localStorage` on logout.
+
+### 2. `MovieListContext` (Dual-Mode)
+```text
+                    ┌─────────────────────────┐
+                    │    MovieListContext     │
+                    └────────────┬────────────┘
+                                 │
+                 Is user authenticated?
+                ┌────────────────┴────────────────┐
+               YES                                NO
+                │                                 │
+                ▼                                 ▼
+   [Express API (/api/*)]             [Browser localStorage]
+   - GET /api/favorites               - Key: mv_favorites
+   - GET /api/watchlist               - Key: mv_watchlist
+   - Neon PostgreSQL database         - Immediate client storage
+```
+- **Optimistic UI**: Mutating actions immediately update the local React state, rolling back safely if the server request fails.
+- **No Silent Merging**: In accordance with specification, guest lists remain stored locally and are not silently blended into newly created accounts.
+
+---
+
+## 🔌 API Reference
+
+All backend routes are prefixed with `/api`. Mutating endpoints require `Origin: <approved_origin>` for CSRF protection.
+
+### Health Check
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/api/health` | No | Returns `200 { "status": "ok", "db": "up" }` when database is healthy |
+
+### Authentication
+| Method | Endpoint | Auth | Request Body | Description |
+|---|---|---|---|---|
+| `POST` | `/api/auth/signup` | No | `{ email, password, name }` | Creates user, sets `mv_session` cookie, returns `201 { user }` |
+| `POST` | `/api/auth/login` | No | `{ email, password }` | Authenticates user, sets cookie, returns `200 { user }` |
+| `POST` | `/api/auth/logout` | Optional | None | Clears `mv_session` cookie, returns `204` |
+| `GET` | `/api/auth/me` | Yes | None | Returns `200 { user }` for current session cookie |
+
+### Favorites (`/api/favorites`)
+| Method | Endpoint | Auth | Request Body | Description |
+|---|---|---|---|---|
+| `GET` | `/api/favorites` | Yes | None | Retrieves all favorites for user, newest first (`200 { items }`) |
+| `PUT` | `/api/favorites/:id` | Yes | `SavedMovie` | Upserts movie snapshot (`200 { item }`). URL ID must equal `body.id` |
+| `DELETE`| `/api/favorites/:id` | Yes | None | Idempotently deletes movie snapshot (`204`) |
+| `POST` | `/api/favorites/toggle`| Yes | `SavedMovie` | Atomically toggles movie state (`200 { favorited: boolean, item? }`) |
+
+### Watchlist (`/api/watchlist`)
+| Method | Endpoint | Auth | Request Body | Description |
+|---|---|---|---|---|
+| `GET` | `/api/watchlist` | Yes | None | Retrieves all watchlist items for user, newest first (`200 { items }`) |
+| `PUT` | `/api/watchlist/:id` | Yes | `SavedMovie` | Upserts movie snapshot (`200 { item }`) |
+| `DELETE`| `/api/watchlist/:id` | Yes | None | Idempotently deletes movie snapshot (`204`) |
+| `POST` | `/api/watchlist/toggle`| Yes | `SavedMovie` | Atomically toggles movie state (`200 { inWatchlist: boolean, item? }`) |
+
+---
+
+## 🚀 Getting Started & Local Development
 
 ### Prerequisites
+- **Node.js**: `24.x LTS` (or `20.x+`)
+- **npm**: `9.x+`
+- **TMDB API Key**: Free Developer key from [themoviedb.org](https://www.themoviedb.org/settings/api)
+- **PostgreSQL Database**: Free instance from [Neon](https://neon.tech) or a local PostgreSQL container
 
-- **Node.js**: Node.js 24 LTS (recommended) or 20+
-- **npm**: 9.x+
-- **TMDB API Key**: Free API key from [themoviedb.org](https://www.themoviedb.org/)
-- **PostgreSQL Database**: Free instance from [Neon](https://neon.tech) or a local PostgreSQL instance
-
-### Local Installation & Setup
-
+### 1. Clone & Install
 ```bash
-# 1. Clone the repository
 git clone https://github.com/Amrenther/tmdb_movies.git
 cd tmdb_movies
-
-# 2. Install dependencies
 npm install
-
-# 3. Create your environment file
-cp .env.example .env
-# Edit .env and supply your VITE_TMDB_API_KEY, DATABASE_URL, and DIRECT_URL (see Environment Variables below)
-
-# 4. Generate Prisma client & apply database migrations
-npm run prisma:generate
-npm run prisma:migrate
-
-# 5. Start development servers in separate terminals
-# Terminal 1: Vite Frontend (http://localhost:5173 with /api proxy to :4000)
-npm run dev
-
-# Terminal 2: Express Backend (http://localhost:4000 with tsx hot reload)
-npm run dev:server
 ```
 
-The frontend will be available at **http://localhost:5173** and will seamlessly proxy `/api/*` calls to the backend on **http://localhost:4000**.
+### 2. Configure Environment
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Update your `.env` file with:
+```env
+VITE_TMDB_API_KEY=your_actual_tmdb_api_key
+DATABASE_URL=postgresql://user:pass@ep-sample-pooler.region.aws.neon.tech/neondb?sslmode=require
+DIRECT_URL=postgresql://user:pass@ep-sample.region.aws.neon.tech/neondb?sslmode=require
+JWT_SECRET=development-jwt-secret-must-be-at-least-32-characters-long
+FRONTEND_ORIGIN=http://localhost:5173,https://tmdb-movies-tau.vercel.app
+COOKIE_NAME=mv_session
+PORT=4000
+NODE_ENV=development
+```
+
+### 3. Initialize Database
+Generate the Prisma Client and run initial migrations:
+```bash
+npm run prisma:generate
+npm run prisma:migrate
+```
+
+### 4. Start Development Servers
+Run the frontend and backend in separate terminals:
+
+**Terminal 1 — Vite React Client:**
+```bash
+npm run dev
+```
+*(Runs at `http://localhost:5173`. Proxies relative `/api` calls to port `4000` via `vite.config.ts`).*
+
+**Terminal 2 — Express TypeScript API:**
+```bash
+npm run dev:server
+```
+*(Runs at `http://localhost:4000` with hot-reload via `tsx watch`).*
 
 ---
 
-### Available Scripts
+## 📜 Available Scripts
 
-| Script | Command | Purpose |
+| Script | Command | Description |
 |---|---|---|
-| `dev` | `npm run dev` | Starts Vite React frontend development server (`:5173`) |
-| `dev:server` | `npm run dev:server` | Starts Express API development server with `tsx watch` (`:4000`) |
-| `build` | `npm run build` | Builds production React SPA bundle (`dist/`) |
-| `build:server` | `npm run build:server` | Compiles TypeScript Express server (`server/dist/`) |
-| `start:server` | `npm run start:server` | Runs compiled production Express server from `server/dist/index.js` |
-| `prisma:generate` | `npm run prisma:generate` | Generates `@prisma/client` from `prisma/schema.prisma` |
-| `prisma:migrate` | `npm run prisma:migrate` | Runs Prisma development migrations locally (`prisma migrate dev`) |
-| `prisma:deploy` | `npm run prisma:deploy` | Applies pending Prisma migrations in production (`prisma migrate deploy`) |
-| `test:api` | `npm run test:api` | Executes backend integration test suite via `node:test` + `tsx` |
-| `lint` | `npm run lint` | Runs ESLint across frontend and backend codebases |
-| `preview` | `npm run preview` | Previews the production Vite frontend build locally |
+| **`npm run dev`** | `vite` | Starts Vite React frontend development server (`:5173`) |
+| **`npm run dev:server`** | `tsx watch server/src/index.ts` | Starts Express backend server with hot-reload (`:4000`) |
+| **`npm run build`** | `tsc -b && vite build` | Type-checks & builds production React SPA in `dist/` |
+| **`npm run build:server`** | `tsc -p tsconfig.server.json` | Compiles TypeScript Express API server to `server/dist/` |
+| **`npm run start:server`** | `node server/dist/index.js` | Executes compiled production Express server |
+| **`npm run prisma:generate`**| `prisma generate` | Generates `@prisma/client` from `prisma/schema.prisma` |
+| **`npm run prisma:migrate`** | `prisma migrate dev` | Runs development database migrations locally |
+| **`npm run prisma:deploy`**  | `prisma migrate deploy` | Applies pending migrations in production |
+| **`npm run test:api`**       | `tsx --test tests/api/**/*.test.ts` | Runs the full 26-test API integration test suite |
+| **`npm run lint`**           | `eslint .` | Runs ESLint across all TypeScript & React files |
+| **`npm run preview`**        | `vite preview` | Previews the production client build locally |
 
 ---
 
 ## 🔑 Environment Variables
 
-The project uses a unified `.env` file for local development. Copy `.env.example` to `.env`:
-
-```env
-# ------------------------------------------------------------------------------
-# Frontend (Client-side Vite & Vercel)
-# ------------------------------------------------------------------------------
-VITE_TMDB_API_KEY=your_tmdb_api_key_here
-
-# ------------------------------------------------------------------------------
-# Backend (Server-side Express API, Render, & Local tsx)
-# ------------------------------------------------------------------------------
-PORT=4000
-NODE_ENV=development
-DATABASE_URL=postgresql://USER:PASSWORD@ep-sample-pooler.region.aws.neon.tech/neondb?sslmode=require
-DIRECT_URL=postgresql://USER:PASSWORD@ep-sample.region.aws.neon.tech/neondb?sslmode=require
-JWT_SECRET=at-least-32-character-secret-change-me-for-production
-FRONTEND_ORIGIN=http://localhost:5173,https://tmdb-movies-tau.vercel.app
-COOKIE_NAME=mv_session
-```
-
-> ⚠️ **Security Rules:**
-> - Never commit `.env` or any production secrets to Git.
-> - `DATABASE_URL`: Use the **connection pooled** URL (with `-pooler`) in Neon for runtime queries.
-> - `DIRECT_URL`: Use the **direct** connection URL in Neon for Prisma migrations.
-> - `JWT_SECRET`: Must be at least 32 characters. Production startup will fail fast if using the development fallback secret.
+| Variable | Target | Required | Description |
+|---|---|---|---|
+| `VITE_TMDB_API_KEY` | Frontend | Yes | TMDB API v3 key for direct movie browse |
+| `PORT` | Backend | No | Express port (`4000` locally, `10000` on Render) |
+| `NODE_ENV` | Backend | Yes | `development`, `production`, or `test` |
+| `DATABASE_URL` | Backend | Yes | PostgreSQL connection string (use **pooled** URL on Neon) |
+| `DIRECT_URL` | Backend | Yes | Direct PostgreSQL connection string (for migrations) |
+| `JWT_SECRET` | Backend | Yes | Min 32-character secret for signing session JWTs |
+| `FRONTEND_ORIGIN` | Backend | Yes | Comma-separated list of allowed origins for CORS/CSRF |
+| `COOKIE_NAME` | Backend | No | Name of session cookie (default: `mv_session`) |
 
 ---
 
 ## 🌐 Production Deployment Guide ($0 Hobby Tier)
 
-The application is deployed across three free-tier cloud platforms: **Neon** (Database), **Render** (API), and **Vercel** (Frontend).
+MovieVerse is configured to run continuously at **$0 cost** using Neon, Render, and Vercel.
 
-### Step 1: Provision Database on Neon (Free Tier)
+### Step 1: Provision Neon PostgreSQL
+1. Create a free account at [neon.tech](https://neon.tech) and start a new project.
+2. Under **Connection Details**, copy:
+   - **Pooled connection**: Set as `DATABASE_URL` for runtime queries.
+   - **Direct connection**: Set as `DIRECT_URL` for Prisma migrations.
 
-1. Sign up for a free account at [neon.tech](https://neon.tech).
-2. Create a new project (e.g., `movieverse-db`) and select your preferred region.
-3. In the Neon Dashboard, copy the connection details:
-   - **Pooled connection string**: Set as `DATABASE_URL` (enables PgBouncer connection pooling).
-   - **Direct connection string**: Set as `DIRECT_URL` (needed for schema migrations).
+### Step 2: Deploy Express API on Render
+Deploy via Render Blueprint or manual dashboard setup:
 
-### Step 2: Deploy Backend API on Render (Free Tier)
-
-You can deploy manually via the Render Dashboard or automatically via Blueprint:
-
-#### Option A: Automatic via Render Blueprint (`render.yaml`)
-1. Push your repository to GitHub.
-2. In the [Render Dashboard](https://dashboard.render.com), go to **Blueprints** → **New Blueprint Instance**.
-3. Select your repository. Render will automatically parse [`render.yaml`](./render.yaml).
-4. Supply the secret environment variables (`DATABASE_URL` and `DIRECT_URL`).
+#### Option A: Automatic Blueprint Setup (`render.yaml`)
+1. In the [Render Dashboard](https://dashboard.render.com), navigate to **Blueprints** → **New Blueprint Instance**.
+2. Connect your GitHub repository. Render automatically reads [`render.yaml`](./render.yaml).
+3. Fill in the secret values (`DATABASE_URL` and `DIRECT_URL`).
 
 #### Option B: Manual Web Service Setup
-1. In Render Dashboard, click **New +** → **Web Service**.
-2. Connect your GitHub repository.
-3. Configure service settings:
-   - **Name**: `movieverse-api` (or your chosen name)
+1. In Render, select **New +** → **Web Service** and connect the repository.
+2. Configuration:
    - **Runtime**: `Node`
    - **Build Command**: `npm install && npm run prisma:generate && npm run build:server`
    - **Start Command**: `npm run start:server`
    - **Plan**: `Free`
    - **Health Check Path**: `/api/health`
-4. Add Environment Variables:
+3. Environment Variables:
    - `NODE_ENV`: `production`
-   - `PORT`: `10000` (Render default)
+   - `PORT`: `10000`
    - `DATABASE_URL`: *(Your Neon pooled connection URL)*
    - `DIRECT_URL`: *(Your Neon direct connection URL)*
    - `JWT_SECRET`: *(A random, cryptographically secure 32+ character string)*
-   - `FRONTEND_ORIGIN`: `https://tmdb-movies-tau.vercel.app` *(Your Vercel deployment URL)*
+   - `FRONTEND_ORIGIN`: `https://tmdb-movies-tau.vercel.app`
    - `COOKIE_NAME`: `mv_session`
-5. Apply database migrations to Neon:
-   Run `npm run prisma:deploy` locally with your Neon `DIRECT_URL`, or run it in the Render shell.
+4. Apply migrations: Run `npm run prisma:deploy` against your Neon direct database URL.
 
-### Step 3: Deploy Frontend SPA on Vercel (Hobby Tier)
-
-1. Connect your repository to [Vercel](https://vercel.com).
-2. In **Project Settings** → **Environment Variables**, set:
+### Step 3: Deploy Frontend on Vercel
+1. Import your repository into [Vercel](https://vercel.com).
+2. Set Environment Variable:
    - `VITE_TMDB_API_KEY`: *(Your TMDB API key)*
-3. Verify [`vercel.json`](./vercel.json):
+3. Confirm [`vercel.json`](./vercel.json):
    ```json
    {
      "rewrites": [
@@ -478,67 +466,87 @@ You can deploy manually via the Render Dashboard or automatically via Blueprint:
      ]
    }
    ```
-   *(Note: If your Render service URL differs from `movieverse-api.onrender.com`, update the destination URL accordingly).*
-4. Deploy the project. Vercel will build the frontend via `npm run build` and route all deep links to `index.html` while proxying `/api/*` to Render.
+   *(Note: If your Render service URL differs from `movieverse-api.onrender.com`, update the destination URL).*
+4. Deploy. Vercel routes `/api/*` requests to Render and sends all other requests to React Router's `index.html`.
 
 ---
 
 ## ⚡ Operational Characteristics & Cold Starts
 
-Because MovieVerse is hosted completely on free tiers, keep in mind:
+Because MovieVerse leverages free-tier hosting infrastructure:
 
-- **Render Cold Starts**: Render free-tier web services spin down after 15 minutes of inactivity. When a request arrives after inactivity, the instance resumes within ~50 seconds. The frontend features resilient error states and loading feedback to handle initial warm-up smoothly.
-- **Neon Serverless Inactivity**: Neon database compute can suspend during periods of complete inactivity and will automatically resume on the next incoming query within milliseconds.
-- **In-Memory Rate Limiting**: The API enforces an in-memory rate limit of 20 requests per 15 minutes per IP on `/api/auth/signup` and `/api/auth/login` to prevent credential stuffing while avoiding the need for an external Redis server.
-- **Stateless Cookies**: Authentication uses signed JWT cookies (`mv_session`), enabling zero-maintenance session persistence without a dedicated session database.
+- **Render Cold Starts**: Render free web services spin down after 15 minutes of inactivity. When a request arrives after inactivity, the instance resumes within ~50 seconds. The frontend features loading indicators and friendly error recovery states so users can retry without losing their place.
+- **Neon Serverless Inactivity**: Neon database computes suspend after a period of zero queries and resume automatically within milliseconds upon receiving a new connection.
+- **In-Memory Rate Limiting**: Auth endpoints limit requests to 20 per 15 minutes per IP using an in-memory sliding window, preventing brute force attempts without requiring a paid Redis instance.
+- **Stateless Cookies**: Sessions are stored directly in signed `httpOnly` JWT cookies, removing the need for a persistent server-side session store.
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+MovieVerse includes an extensive automated integration test suite written with Node's native test runner (`node:test`) and executed via `tsx`:
+
+```bash
+npm run test:api
+```
+
+### Test Coverage Highlights (26/26 Passing)
+- **Authentication**: Valid registration, password hashing verification, short password rejection, duplicate email conflict (`409`), credential check, session cookie issuance, `/api/auth/me` verification, logout cookie clearing, and invalid/expired JWT rejection.
+- **Favorites & Watchlist**: Auth enforcement, PUT snapshot upsert with TMDB field mappings, ID mismatch validation, duplicate PUT idempotence, toggle operations, cross-account user isolation, idempotent DELETE, and concurrent toggle race handling.
+- **Security & CSRF**: Mandatory `Origin` header validation on mutating requests, Helmet security headers, `X-Powered-By` suppression, and standardized JSON error envelopes.
+- **Database Health**: Real query test on `GET /api/health` with `200 { "status": "ok", "db": "up" }`.
+
+---
 
 ## 🗂 Key Design Decisions
 
-- **CSS-in-JSX over external stylesheets**: Component styles are co-located using `<style>` tags within JSX for true encapsulation without a CSS Modules setup overhead.
-- **Context API over Redux/Zustand**: The favorites/watchlist feature uses React's built-in Context API — lightweight and sufficient for this feature scope without adding a third-party state library.
-- **localStorage for persistence**: User lists survive page refresh and browser restarts without any backend. The `SavedMovie` shape is intentionally minimal (8 fields) to keep storage efficient.
-- **Toggle pattern**: `toggleFavorite` / `toggleWatchlist` use a single function to add-if-absent or remove-if-present, simplifying call-site code to a single click handler.
-- **Parallel data fetching**: `Promise.all` is used on the home page to simultaneously fetch trending, top-rated, and now-playing data in a single render cycle.
-- **Image lazy loading**: All poster/backdrop `<img>` tags use `loading="lazy"` to defer off-screen image requests and improve initial page performance.
-- **Video sort priority**: Videos on the details page are sorted so *official trailers* always appear first, followed by other trailers, then teasers, then all other types.
-- **Badge visibility**: Nav count badges are only rendered when `count > 0`, keeping the navbar uncluttered for new users.
+1. **Dual-Tier State Management**: Unauthenticated users enjoy zero-friction `localStorage` list saving, while logged-in users get cloud synchronization with PostgreSQL.
+2. **First-Party Cookie Isolation**: By utilizing Vercel's edge rewrite to proxy `/api/*`, the browser sees all API calls as same-origin, ensuring cookies work without third-party cookie blocking.
+3. **Optimistic UI with Rollback**: Card toggles update immediately on click for instant responsiveness, with graceful rollback and error notification if the network request fails.
+4. **Zero TMDB Proxying**: TMDB calls stay client-side, eliminating server bottlenecking and preserving server memory.
+5. **Concurrency Hardening**: Toggle operations handle duplicate-key race conditions (`P2002`) safely without returning 500 internal errors.
 
 ---
 
 ## 📋 Changelog
 
-### v1.1.0 — Favorites & Watchlist *(2026-07-04)*
+### v1.2.0 — Full-Stack Backend, Cloud Auth & Lists, Deployment *(Current)*
+- Added Express 5 TypeScript REST API with Prisma 7 and PostgreSQL.
+- Implemented user registration, login, logout, and session restoration with bcryptjs and JWT cookies.
+- Implemented account-owned Favorites and Watchlist persistence with concurrency hardening.
+- Integrated `AuthModal` and connected `MovieListContext` to cloud backend with optimistic UI and rollback.
+- Added 26-test API integration test suite covering SRS acceptance requirements.
+- Configured Vercel same-origin `/api/*` edge rewrite and Render Blueprint (`render.yaml`).
+- Updated project documentation with full architecture and $0 deployment guides.
 
-**New Files**
-- `src/context/MovieListContext.tsx` — Global React Context with `localStorage` persistence for Favorites and Watchlist
-- `src/pages/SavedPages.tsx` — `FavoritesPage` (`/favorites`) and `WatchlistPage` (`/watchlist`) with grid, remove, and empty states
+### v1.1.0 — Favorites & Watchlist Context *(2026-07-04)*
+- Added `MovieListContext` with persistent `localStorage` for guests.
+- Added `/favorites` and `/watchlist` pages with remove buttons and empty states.
+- Added live count badges on navigation links.
 
-**Modified Files**
-- `src/main.tsx` — Wrapped app with `<MovieListProvider>`
-- `src/App.tsx` — Added `/favorites` and `/watchlist` routes
-- `src/layouts/MainLayout.tsx` — Added Favorites ❤️ and Watchlist 🔖 nav links with live count badges; full mobile menu support
-- `src/pages/HomePage.tsx` — Added `useMovieList` hook to `MovieCard`, `GridMovieCard`, and `HeroSpotlight`; hover-reveal action buttons on all cards; hero Favorite/Watchlist buttons
-- `src/pages/MovieDetails.tsx` — Added Favorite and Watchlist pill buttons in the movie hero card with active color states
-
-### v1.0.0 — Initial Release
-- Hero Spotlight, Trending/Top Rated/Now Playing rows, Browse Grid, Genre Filter, Live Search
-- Movie Details with Videos, Image Gallery, Lightbox, Reviews, Similar Movies
-- Deployed to Vercel with SPA routing
+### v1.0.0 — Initial Frontend Release
+- Hero Spotlight, Trending/Top Rated/Now Playing rows, Browse Grid, Genre Filter, Live Search.
+- Movie Details with Trailers, Image Gallery with Lightbox, Reviews, Similar Movies.
+- Deployed on Vercel with SPA routing.
 
 ---
-
 
 ## 🤝 Contributing
 
 Contributions are welcome! To contribute:
-
 1. Fork the repository
-2. Create your feature branch: `git checkout -b feature/amazing-feature`
-3. Commit your changes: `git commit -m 'feat: add amazing feature'`
-4. Push to the branch: `git push origin feature/amazing-feature`
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'feat: add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-Please ensure your code passes ESLint checks (`npm run lint`) before submitting.
+Ensure your code passes linting and tests before submitting:
+```bash
+npm run lint
+npm run test:api
+npm run build
+npm run build:server
+```
 
 ---
 
@@ -550,30 +558,25 @@ This project is open-source and available under the [MIT License](LICENSE).
 
 ## 🙏 Acknowledgements
 
-- [The Movie Database (TMDB)](https://www.themoviedb.org/) for the comprehensive free API
-- [React](https://react.dev/) team for the outstanding v19 release
-- [Vite](https://vitejs.dev/) for the blazing-fast build tooling
-- [Vercel](https://vercel.com/) for seamless free hosting
+- [The Movie Database (TMDB)](https://www.themoviedb.org/) for the comprehensive free movie data API
+- [React](https://react.dev/) team for the modern React 19 framework
+- [Vite](https://vitejs.dev/) for the lightning-fast build tooling
+- [Prisma](https://www.prisma.io/) for type-safe database queries and migrations
+- [Neon](https://neon.tech/) for serverless PostgreSQL
+- [Render](https://render.com/) for free Web Service hosting
+- [Vercel](https://vercel.com/) for seamless edge SPA hosting
 
 ---
 
+## 👨‍💻 About the Author
+
 <p align="center">
-  Made with ❤️ by <a href="https://github.com/Amrenther">Amrenther</a> · Powered by <a href="https://www.themoviedb.org/">TMDB</a>
+  Made with ❤️ by <a href="https://github.com/Amrenther"><strong>Amrenther</strong></a>
 </p>
 
-</hr>
+I'm a Full Stack Developer passionate about building modern, scalable, and responsive web applications with **React**, **TypeScript**, **Node.js**, **Express**, **PostgreSQL**, and **Prisma**.
 
-👨‍💻 About Me
-</br>
+- 🌐 **GitHub**: [github.com/Amrenther](https://github.com/Amrenther)
+- 💼 **LinkedIn**: [linkedin.com/in/amrenther](https://www.linkedin.com/in/amrenther/)
 
-
-I'm a Computer Science graduate and Full Stack Developer interested in building modern, scalable web applications using technologies such as React, Next.js, TypeScript, PostgreSQL, and Prisma.
-
-This project represents my practical experience in developing a complete full-stack application from database design and authentication to frontend development and deployment.
-
-Connect With Me
-</hr>
-GitHub: https://github.com/Amrenther
-LinkedIn: https://www.linkedin.com/in/amrenther/
-⭐ If You Found This Project Useful
-If you found this project interesting, consider giving the repository a ⭐ on GitHub.
+⭐ **If you found this project helpful, please consider giving the repository a star!**
