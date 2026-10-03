@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "tsx watch server/src/index.ts",
-    "build": "tsc -b && vite build",
+    "build": "npm run prisma:generate && tsc -b && vite build",
     "build:server": "tsc -p tsconfig.server.json",
     "start:server": "node server/dist/index.js",
     "prisma:generate": "prisma generate",
