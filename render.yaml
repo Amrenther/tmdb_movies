@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: movieverse-api
+    runtime: node
+    plan: free
+    region: oregon
+    buildCommand: npm install && npm run prisma:generate && npm run build:server
+    startCommand: npm run start:server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_ORIGIN
+        value: http://localhost:5173,https://tmdb-movies-tau.vercel.app
+      - key: COOKIE_NAME
+        value: mv_session

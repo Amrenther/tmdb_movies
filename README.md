@@ -287,15 +287,57 @@ export const tmdbClient = axios.create({
 
 ---
 
+## 🏗️ Architecture & Topology
+
+MovieVerse is designed as a secure, high-performance, **$0 hobby-tier full-stack application**:
+
+```text
+ ┌──────────────────────────────────────────────────────────────┐
+ │                      Browser Client                          │
+ └──────────────┬───────────────────────────────┬───────────────┘
+                │                               │
+                │ Direct TMDB API requests      │ Relative /api/* requests
+                │ (no proxy, client key)        │ (credentials: "include")
+                ▼                               ▼
+ ┌──────────────────────────────┐   ┌───────────────────────────┐
+ │   api.themoviedb.org         │   │   Vercel Hobby Edge       │
+ │   (TMDB REST API v3)         │   │   (React 19 SPA)          │
+ └──────────────────────────────┘   └───────────┬───────────────┘
+                                                │
+                                                │ External Rewrite /api/:path*
+                                                │ (Same-Origin Cookie Proxy)
+                                                ▼
+                                    ┌───────────────────────────┐
+                                    │   Render Free Web Service │
+                                    │   (Node 24 + Express 5)   │
+                                    └───────────┬───────────────┘
+                                                │
+                                                │ Prisma 7 + PostgreSQL Adapter
+                                                ▼
+                                    ┌───────────────────────────┐
+                                    │   Neon Serverless Postgres│
+                                    │   (Free Database Tier)    │
+                                    └───────────────────────────┘
+```
+
+- **Zero Paid Services**: Strict adherence to free tiers (Vercel Hobby + Render Free + Neon Free).
+- **Direct TMDB Access**: The backend never proxies TMDB data; movies are fetched directly from the browser for maximum speed and minimal backend bandwidth.
+- **Same-Origin API Rewrite**: Vercel proxies `/api/*` requests to Render at the edge. The browser communicates with relative `/api` paths, ensuring session cookies (`mv_session`) remain first-party and immune to third-party cookie restrictions.
+- **Stateless Auth**: Signed HS256 JWTs stored in `httpOnly`, `SameSite=Lax`, `Secure` cookies with 7-day expiration.
+- **CSRF & Security**: Helmet security headers, `X-Powered-By` disabled, and mandatory `Origin` verification on all state-changing endpoints (`POST`, `PUT`, `DELETE`).
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- **Node.js** ≥ 18.x
-- **npm** ≥ 9.x
-- A free [TMDB API key](https://www.themoviedb.org/settings/api)
+- **Node.js**: Node.js 24 LTS (recommended) or 20+
+- **npm**: 9.x+
+- **TMDB API Key**: Free API key from [themoviedb.org](https://www.themoviedb.org/)
+- **PostgreSQL Database**: Free instance from [Neon](https://neon.tech) or a local PostgreSQL instance
 
-### Installation
+### Local Installation & Setup
 
 ```bash
 # 1. Clone the repository
@@ -307,69 +349,148 @@ npm install
 
 # 3. Create your environment file
 cp .env.example .env
-# Then add your TMDB API key (see below)
+# Edit .env and supply your VITE_TMDB_API_KEY, DATABASE_URL, and DIRECT_URL (see Environment Variables below)
 
-# 4. Start the development server
+# 4. Generate Prisma client & apply database migrations
+npm run prisma:generate
+npm run prisma:migrate
+
+# 5. Start development servers in separate terminals
+# Terminal 1: Vite Frontend (http://localhost:5173 with /api proxy to :4000)
 npm run dev
+
+# Terminal 2: Express Backend (http://localhost:4000 with tsx hot reload)
+npm run dev:server
 ```
 
-The app will be available at **http://localhost:5173**
+The frontend will be available at **http://localhost:5173** and will seamlessly proxy `/api/*` calls to the backend on **http://localhost:4000**.
+
+---
 
 ### Available Scripts
 
-| Script | Command | Description |
+| Script | Command | Purpose |
 |---|---|---|
-| Dev server | `npm run dev` | Start Vite dev server with HMR |
-| Build | `npm run build` | Type-check + production bundle |
-| Preview | `npm run preview` | Preview the production build locally |
-| Lint | `npm run lint` | Run ESLint across the project |
+| `dev` | `npm run dev` | Starts Vite React frontend development server (`:5173`) |
+| `dev:server` | `npm run dev:server` | Starts Express API development server with `tsx watch` (`:4000`) |
+| `build` | `npm run build` | Builds production React SPA bundle (`dist/`) |
+| `build:server` | `npm run build:server` | Compiles TypeScript Express server (`server/dist/`) |
+| `start:server` | `npm run start:server` | Runs compiled production Express server from `server/dist/index.js` |
+| `prisma:generate` | `npm run prisma:generate` | Generates `@prisma/client` from `prisma/schema.prisma` |
+| `prisma:migrate` | `npm run prisma:migrate` | Runs Prisma development migrations locally (`prisma migrate dev`) |
+| `prisma:deploy` | `npm run prisma:deploy` | Applies pending Prisma migrations in production (`prisma migrate deploy`) |
+| `test:api` | `npm run test:api` | Executes backend integration test suite via `node:test` + `tsx` |
+| `lint` | `npm run lint` | Runs ESLint across frontend and backend codebases |
+| `preview` | `npm run preview` | Previews the production Vite frontend build locally |
 
 ---
 
 ## 🔑 Environment Variables
 
-Create a `.env` file in the project root:
+The project uses a unified `.env` file for local development. Copy `.env.example` to `.env`:
 
 ```env
+# ------------------------------------------------------------------------------
+# Frontend (Client-side Vite & Vercel)
+# ------------------------------------------------------------------------------
 VITE_TMDB_API_KEY=your_tmdb_api_key_here
+
+# ------------------------------------------------------------------------------
+# Backend (Server-side Express API, Render, & Local tsx)
+# ------------------------------------------------------------------------------
+PORT=4000
+NODE_ENV=development
+DATABASE_URL=postgresql://USER:PASSWORD@ep-sample-pooler.region.aws.neon.tech/neondb?sslmode=require
+DIRECT_URL=postgresql://USER:PASSWORD@ep-sample.region.aws.neon.tech/neondb?sslmode=require
+JWT_SECRET=at-least-32-character-secret-change-me-for-production
+FRONTEND_ORIGIN=http://localhost:5173,https://tmdb-movies-tau.vercel.app
+COOKIE_NAME=mv_session
 ```
 
-> ⚠️ **Security Note:** Never commit your `.env` file. It is already included in `.gitignore`. The `VITE_` prefix makes the variable accessible in the browser bundle — keep your key restricted to read-only access on the TMDB dashboard.
-
-To get your API key:
-1. Create a free account at [themoviedb.org](https://www.themoviedb.org/)
-2. Navigate to **Settings → API**
-3. Request an API key (Developer / Personal use)
-4. Copy the **API Key (v3 auth)** value
+> ⚠️ **Security Rules:**
+> - Never commit `.env` or any production secrets to Git.
+> - `DATABASE_URL`: Use the **connection pooled** URL (with `-pooler`) in Neon for runtime queries.
+> - `DIRECT_URL`: Use the **direct** connection URL in Neon for Prisma migrations.
+> - `JWT_SECRET`: Must be at least 32 characters. Production startup will fail fast if using the development fallback secret.
 
 ---
 
-## 🌐 Deployment
+## 🌐 Production Deployment Guide ($0 Hobby Tier)
 
-The project is deployed on **Vercel** with client-side routing support.
+The application is deployed across three free-tier cloud platforms: **Neon** (Database), **Render** (API), and **Vercel** (Frontend).
 
-### `vercel.json`
-```json
-{
-  "rewrites": [
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
-}
-```
-This rewrite rule ensures that deep links like `/movie/550` are handled by React Router instead of returning a 404 from Vercel's edge network.
+### Step 1: Provision Database on Neon (Free Tier)
 
-### Deploy Your Own Fork
+1. Sign up for a free account at [neon.tech](https://neon.tech).
+2. Create a new project (e.g., `movieverse-db`) and select your preferred region.
+3. In the Neon Dashboard, copy the connection details:
+   - **Pooled connection string**: Set as `DATABASE_URL` (enables PgBouncer connection pooling).
+   - **Direct connection string**: Set as `DIRECT_URL` (needed for schema migrations).
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/Amrenther/tmdb_movies)
+### Step 2: Deploy Backend API on Render (Free Tier)
 
-1. Click the button above or import the repo in your Vercel dashboard
-2. Add `VITE_TMDB_API_KEY` as an **Environment Variable** in Vercel project settings
-3. Vercel will auto-detect Vite and run `npm run build` → deploy `dist/`
+You can deploy manually via the Render Dashboard or automatically via Blueprint:
+
+#### Option A: Automatic via Render Blueprint (`render.yaml`)
+1. Push your repository to GitHub.
+2. In the [Render Dashboard](https://dashboard.render.com), go to **Blueprints** → **New Blueprint Instance**.
+3. Select your repository. Render will automatically parse [`render.yaml`](./render.yaml).
+4. Supply the secret environment variables (`DATABASE_URL` and `DIRECT_URL`).
+
+#### Option B: Manual Web Service Setup
+1. In Render Dashboard, click **New +** → **Web Service**.
+2. Connect your GitHub repository.
+3. Configure service settings:
+   - **Name**: `movieverse-api` (or your chosen name)
+   - **Runtime**: `Node`
+   - **Build Command**: `npm install && npm run prisma:generate && npm run build:server`
+   - **Start Command**: `npm run start:server`
+   - **Plan**: `Free`
+   - **Health Check Path**: `/api/health`
+4. Add Environment Variables:
+   - `NODE_ENV`: `production`
+   - `PORT`: `10000` (Render default)
+   - `DATABASE_URL`: *(Your Neon pooled connection URL)*
+   - `DIRECT_URL`: *(Your Neon direct connection URL)*
+   - `JWT_SECRET`: *(A random, cryptographically secure 32+ character string)*
+   - `FRONTEND_ORIGIN`: `https://tmdb-movies-tau.vercel.app` *(Your Vercel deployment URL)*
+   - `COOKIE_NAME`: `mv_session`
+5. Apply database migrations to Neon:
+   Run `npm run prisma:deploy` locally with your Neon `DIRECT_URL`, or run it in the Render shell.
+
+### Step 3: Deploy Frontend SPA on Vercel (Hobby Tier)
+
+1. Connect your repository to [Vercel](https://vercel.com).
+2. In **Project Settings** → **Environment Variables**, set:
+   - `VITE_TMDB_API_KEY`: *(Your TMDB API key)*
+3. Verify [`vercel.json`](./vercel.json):
+   ```json
+   {
+     "rewrites": [
+       {
+         "source": "/api/:path*",
+         "destination": "https://movieverse-api.onrender.com/api/:path*"
+       },
+       {
+         "source": "/(.*)",
+         "destination": "/index.html"
+       }
+     ]
+   }
+   ```
+   *(Note: If your Render service URL differs from `movieverse-api.onrender.com`, update the destination URL accordingly).*
+4. Deploy the project. Vercel will build the frontend via `npm run build` and route all deep links to `index.html` while proxying `/api/*` to Render.
 
 ---
+
+## ⚡ Operational Characteristics & Cold Starts
+
+Because MovieVerse is hosted completely on free tiers, keep in mind:
+
+- **Render Cold Starts**: Render free-tier web services spin down after 15 minutes of inactivity. When a request arrives after inactivity, the instance resumes within ~50 seconds. The frontend features resilient error states and loading feedback to handle initial warm-up smoothly.
+- **Neon Serverless Inactivity**: Neon database compute can suspend during periods of complete inactivity and will automatically resume on the next incoming query within milliseconds.
+- **In-Memory Rate Limiting**: The API enforces an in-memory rate limit of 20 requests per 15 minutes per IP on `/api/auth/signup` and `/api/auth/login` to prevent credential stuffing while avoiding the need for an external Redis server.
+- **Stateless Cookies**: Authentication uses signed JWT cookies (`mv_session`), enabling zero-maintenance session persistence without a dedicated session database.
 
 ## 🗂 Key Design Decisions
 

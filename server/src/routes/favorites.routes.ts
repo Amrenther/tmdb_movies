@@ -139,36 +139,51 @@ router.post('/toggle', async (req: Request, res: Response, next: NextFunction): 
     const movieId = body.id;
 
     // Use a transaction to make the toggle atomic and safe against concurrent requests
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.favorite.findUnique({
-        where: { userId_movieId: { userId, movieId } },
-      });
-
-      if (existing) {
-        await tx.favorite.delete({
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const existing = await tx.favorite.findUnique({
           where: { userId_movieId: { userId, movieId } },
         });
-        return { favorited: false, item: undefined };
-      }
 
-      const created = await tx.favorite.create({
-        data: {
-          userId,
-          movieId,
-          title: body.title,
-          posterPath: body.poster_path ?? null,
-          backdropPath: body.backdrop_path ?? null,
-          releaseDate: body.release_date,
-          voteAverage: body.vote_average,
-          overview: body.overview ?? null,
-          genreIds: body.genre_ids ?? [],
-        },
+        if (existing) {
+          await tx.favorite.delete({
+            where: { userId_movieId: { userId, movieId } },
+          });
+          return { favorited: false, item: undefined };
+        }
+
+        const created = await tx.favorite.create({
+          data: {
+            userId,
+            movieId,
+            title: body.title,
+            posterPath: body.poster_path ?? null,
+            backdropPath: body.backdrop_path ?? null,
+            releaseDate: body.release_date,
+            voteAverage: body.vote_average,
+            overview: body.overview ?? null,
+            genreIds: body.genre_ids ?? [],
+          },
+        });
+
+        return { favorited: true, item: mapToSavedMovie(created) };
       });
 
-      return { favorited: true, item: mapToSavedMovie(created) };
-    });
-
-    res.json(result);
+      res.json(result);
+    } catch (txErr: unknown) {
+      // If a concurrent insert occurred right between findUnique and create (Prisma P2002)
+      if (
+        txErr &&
+        typeof txErr === 'object' &&
+        'code' in txErr &&
+        (txErr as { code: string }).code === 'P2002'
+      ) {
+        await prisma.favorite.deleteMany({ where: { userId, movieId } });
+        res.json({ favorited: false, item: undefined });
+        return;
+      }
+      throw txErr;
+    }
   } catch (err) {
     next(err);
   }
