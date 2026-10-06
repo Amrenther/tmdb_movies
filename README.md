@@ -55,7 +55,7 @@ The application combines a high-speed browser client with a secure, cloud-persis
 
 ## 🚀 Live Demo
 
-> 🔗 **Frontend (Vercel)**: [https://tmdb-movies-tau.vercel.app](https://tmdb-movies-tau.vercel.app)  
+> 🔗 **Frontend (Vercel)**: [https://movie-verse-flax-one.vercel.app/](https://movie-verse-flax-one.vercel.app/)  
 > 🔗 **Backend API (Render)**: [https://movieverse-api.onrender.com/api/health](https://movieverse-api.onrender.com/api/health)
 
 ---
