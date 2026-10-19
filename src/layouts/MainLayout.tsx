@@ -10,7 +10,7 @@ const MainLayout = () => {
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
     const [authModalOpen, setAuthModalOpen] = useState(false);
-    const { favorites, watchlist } = useMovieList();
+    const { favorites, watchlist, registerAuthGate } = useMovieList();
     const { user, isLoading: authLoading, logout } = useAuth();
 
     useEffect(() => {
@@ -18,6 +18,11 @@ const MainLayout = () => {
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    // Register the auth gate so MovieListContext can open the modal when a guest tries to add
+    useEffect(() => {
+        registerAuthGate(() => setAuthModalOpen(true));
+    }, [registerAuthGate]);
 
     // Close menu on navigation
     const handleNav = (path: string) => {
@@ -73,13 +78,12 @@ const MainLayout = () => {
                     cursor: pointer;
                     text-decoration: none;
                 }
-                .nav-logo-icon {
-                    width: 34px; height: 34px;
-                    background: linear-gradient(135deg, #667eea, #f093fb);
+                .nav-logo-img {
+                    width: 34px;
+                    height: 34px;
+                    object-fit: contain;
                     border-radius: 8px;
-                    display: flex; align-items: center; justify-content: center;
-                    font-size: 1rem;
-                    box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+                    flex-shrink: 0;
                 }
                 .nav-brand-text {
                     font-size: 1.2rem;
@@ -383,6 +387,18 @@ const MainLayout = () => {
                     -webkit-text-fill-color: transparent;
                     background-clip: text;
                     margin-bottom: 0.4rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 0.45rem;
+                }
+                .footer-logo-img {
+                    width: 22px;
+                    height: 22px;
+                    object-fit: contain;
+                    border-radius: 4px;
+                    /* Keeps the image visible against gradient text sibling */
+                    filter: drop-shadow(0 1px 3px rgba(102,126,234,0.5));
                 }
                 .footer-copy {
                     color: #4b5563;
@@ -398,7 +414,7 @@ const MainLayout = () => {
             {/* Navbar */}
             <nav className={`navbar ${scrolled ? "scrolled" : "top"}`}>
                 <div className="nav-brand" onClick={() => handleNav("/")}>
-                    <div className="nav-logo-icon">🎬</div>
+                    <img src="/logo.png" alt="MovieVerse logo" className="nav-logo-img" />
                     <span className="nav-brand-text">MovieVerse</span>
                 </div>
 
@@ -508,7 +524,11 @@ const MainLayout = () => {
             </main>
 
             <footer className="footer">
-                <div className="footer-brand">🎬 MovieVerse</div>
+                <div className="footer-brand">
+                    {/* Using a regular img here — gradient text is on the span sibling */}
+                    <img src="/logo.png" alt="" aria-hidden="true" className="footer-logo-img" />
+                    <span>MovieVerse</span>
+                </div>
                 <p className="footer-copy">© {new Date().getFullYear()} Amrenther · MovieVerse · All rights reserved.</p>
                 <p className="footer-tmdb">Powered by The Movie Database (TMDB) API</p>
             </footer>

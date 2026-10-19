@@ -11,10 +11,11 @@ interface AuthModalProps {
 
 export const AuthModal = ({ onClose }: AuthModalProps) => {
     const { login, signup } = useAuth();
-    const [mode, setMode] = useState<"login" | "signup">("login");
+    const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [topError, setTopError] = useState<string | null>(null);
     const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -25,11 +26,12 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
         setFieldErrors({});
     };
 
-    const switchMode = (next: "login" | "signup") => {
+    const switchMode = (next: "login" | "signup" | "forgot") => {
         setMode(next);
         setName("");
         setEmail("");
         setPassword("");
+        setShowPassword(false);
         clearErrors();
     };
 
@@ -72,6 +74,7 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
     };
 
     const isLogin = mode === "login";
+    const isForgot = mode === "forgot";
 
     return (
         <>
@@ -140,6 +143,9 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
                     color: #94a3b8; margin-bottom: 0.4rem;
                     letter-spacing: 0.02em;
                 }
+                .auth-input-wrap {
+                    position: relative;
+                }
                 .auth-input {
                     width: 100%;
                     background: rgba(255,255,255,0.06);
@@ -153,6 +159,9 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
                     font-family: 'Inter', sans-serif;
                     box-sizing: border-box;
                 }
+                .auth-input.has-toggle {
+                    padding-right: 2.8rem;
+                }
                 .auth-input:focus {
                     border-color: #7c3aed;
                     background: rgba(124,58,237,0.08);
@@ -160,6 +169,90 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
                 .auth-input.error { border-color: rgba(239,68,68,0.6); }
                 .auth-field-error {
                     color: #fca5a5; font-size: 0.75rem; margin-top: 0.3rem;
+                }
+
+                /* ── Password toggle button ── */
+                .auth-pw-toggle {
+                    position: absolute;
+                    right: 0.75rem;
+                    top: 50%;
+                    transform: translateY(-50%);
+                    background: none;
+                    border: none;
+                    cursor: pointer;
+                    font-size: 1.05rem;
+                    color: #64748b;
+                    padding: 0;
+                    line-height: 1;
+                    transition: color 0.2s;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                .auth-pw-toggle:hover { color: #a78bfa; }
+
+                /* ── Forgot password link ── */
+                .auth-forgot-link {
+                    display: block;
+                    text-align: right;
+                    margin-top: -0.4rem;
+                    margin-bottom: 0.85rem;
+                    background: none;
+                    border: none;
+                    color: #7c6fa0;
+                    font-size: 0.78rem;
+                    font-weight: 500;
+                    cursor: pointer;
+                    padding: 0;
+                    font-family: 'Inter', sans-serif;
+                    transition: color 0.2s;
+                }
+                .auth-forgot-link:hover { color: #a78bfa; }
+
+                /* ── Forgot password info panel ── */
+                .auth-forgot-panel {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    text-align: center;
+                    padding: 1rem 0 0.5rem;
+                    gap: 0.85rem;
+                    animation: fadeIn 0.18s ease;
+                }
+                .auth-forgot-icon {
+                    font-size: 3rem;
+                    line-height: 1;
+                }
+                .auth-forgot-title {
+                    font-size: 1.15rem;
+                    font-weight: 700;
+                    color: #f1f5f9;
+                    margin: 0;
+                }
+                .auth-forgot-desc {
+                    font-size: 0.85rem;
+                    color: #94a3b8;
+                    line-height: 1.65;
+                    max-width: 290px;
+                    margin: 0;
+                }
+                .auth-forgot-back {
+                    margin-top: 0.5rem;
+                    width: 100%;
+                    padding: 0.7rem;
+                    border-radius: 0.65rem;
+                    border: 1px solid rgba(167,139,250,0.3);
+                    background: rgba(124,58,237,0.12);
+                    color: #a78bfa;
+                    font-size: 0.9rem;
+                    font-weight: 600;
+                    cursor: pointer;
+                    transition: background 0.2s, border-color 0.2s;
+                    font-family: 'Inter', sans-serif;
+                }
+                .auth-forgot-back:hover {
+                    background: rgba(124,58,237,0.22);
+                    border-color: rgba(167,139,250,0.55);
                 }
 
                 .auth-submit {
@@ -222,99 +315,146 @@ export const AuthModal = ({ onClose }: AuthModalProps) => {
                 <div className="auth-modal" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
                     <button className="auth-close" onClick={onClose} aria-label="Close">✕</button>
 
-                    <h2 className="auth-title" id="auth-modal-title">
-                        {isLogin ? "Welcome back" : "Create account"}
-                    </h2>
-                    <p className="auth-subtitle">
-                        {isLogin
-                            ? "Sign in to access your lists on any device."
-                            : "Join MovieVerse to save your favorites and watchlist."}
-                    </p>
-
-                    {topError && (
-                        <div className="auth-error-banner" role="alert">{topError}</div>
-                    )}
-
-                    <form onSubmit={handleSubmit} noValidate>
-                        {!isLogin && (
-                            <div className="auth-field">
-                                <label className="auth-label" htmlFor="auth-name">Name</label>
-                                <input
-                                    id="auth-name"
-                                    className={`auth-input${fieldErrors.name ? " error" : ""}`}
-                                    type="text"
-                                    autoComplete="name"
-                                    placeholder="Your name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    required
-                                    disabled={submitting}
-                                />
-                                {fieldErrors.name && (
-                                    <p className="auth-field-error" role="alert">{fieldErrors.name}</p>
-                                )}
+                    {/* ── Forgot Password Panel ── */}
+                    {isForgot ? (
+                        <>
+                            <h2 className="auth-title" id="auth-modal-title">Forgot password?</h2>
+                            <p className="auth-subtitle">We'll help you get back in.</p>
+                            <div className="auth-forgot-panel">
+                                <div className="auth-forgot-icon">🔐</div>
+                                <h3 className="auth-forgot-title">Password reset</h3>
+                                <p className="auth-forgot-desc">
+                                    Email-based password reset is not yet available. To regain access,
+                                    please contact support or create a new account with a different email.
+                                </p>
+                                <button
+                                    className="auth-forgot-back"
+                                    onClick={() => switchMode("login")}
+                                >
+                                    ← Back to Login
+                                </button>
                             </div>
-                        )}
+                        </>
+                    ) : (
+                        <>
+                            {/* ── Login / Signup Panel ── */}
+                            <h2 className="auth-title" id="auth-modal-title">
+                                {isLogin ? "Welcome back" : "Create account"}
+                            </h2>
+                            <p className="auth-subtitle">
+                                {isLogin
+                                    ? "Sign in to access your lists on any device."
+                                    : "Join MovieVerse to save your favorites and watchlist."}
+                            </p>
 
-                        <div className="auth-field">
-                            <label className="auth-label" htmlFor="auth-email">Email</label>
-                            <input
-                                id="auth-email"
-                                className={`auth-input${fieldErrors.email ? " error" : ""}`}
-                                type="email"
-                                autoComplete="email"
-                                placeholder="you@example.com"
-                                value={email}
-                                onChange={(e) => setEmail(e.target.value)}
-                                required
-                                disabled={submitting}
-                            />
-                            {fieldErrors.email && (
-                                <p className="auth-field-error" role="alert">{fieldErrors.email}</p>
+                            {topError && (
+                                <div className="auth-error-banner" role="alert">{topError}</div>
                             )}
-                        </div>
 
-                        <div className="auth-field">
-                            <label className="auth-label" htmlFor="auth-password">Password</label>
-                            <input
-                                id="auth-password"
-                                className={`auth-input${fieldErrors.password ? " error" : ""}`}
-                                type="password"
-                                autoComplete={isLogin ? "current-password" : "new-password"}
-                                placeholder={isLogin ? "Your password" : "Min. 8 characters"}
-                                value={password}
-                                onChange={(e) => setPassword(e.target.value)}
-                                required
-                                disabled={submitting}
-                            />
-                            {fieldErrors.password && (
-                                <p className="auth-field-error" role="alert">{fieldErrors.password}</p>
+                            <form onSubmit={handleSubmit} noValidate>
+                                {!isLogin && (
+                                    <div className="auth-field">
+                                        <label className="auth-label" htmlFor="auth-name">Name</label>
+                                        <input
+                                            id="auth-name"
+                                            className={`auth-input${fieldErrors.name ? " error" : ""}`}
+                                            type="text"
+                                            autoComplete="name"
+                                            placeholder="Your name"
+                                            value={name}
+                                            onChange={(e) => setName(e.target.value)}
+                                            required
+                                            disabled={submitting}
+                                        />
+                                        {fieldErrors.name && (
+                                            <p className="auth-field-error" role="alert">{fieldErrors.name}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                <div className="auth-field">
+                                    <label className="auth-label" htmlFor="auth-email">Email</label>
+                                    <input
+                                        id="auth-email"
+                                        className={`auth-input${fieldErrors.email ? " error" : ""}`}
+                                        type="email"
+                                        autoComplete="email"
+                                        placeholder="you@example.com"
+                                        value={email}
+                                        onChange={(e) => setEmail(e.target.value)}
+                                        required
+                                        disabled={submitting}
+                                    />
+                                    {fieldErrors.email && (
+                                        <p className="auth-field-error" role="alert">{fieldErrors.email}</p>
+                                    )}
+                                </div>
+
+                                <div className="auth-field">
+                                    <label className="auth-label" htmlFor="auth-password">Password</label>
+                                    <div className="auth-input-wrap">
+                                        <input
+                                            id="auth-password"
+                                            className={`auth-input has-toggle${fieldErrors.password ? " error" : ""}`}
+                                            type={showPassword ? "text" : "password"}
+                                            autoComplete={isLogin ? "current-password" : "new-password"}
+                                            placeholder={isLogin ? "Your password" : "Min. 8 characters"}
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            disabled={submitting}
+                                        />
+                                        <button
+                                            type="button"
+                                            className="auth-pw-toggle"
+                                            onClick={() => setShowPassword((p) => !p)}
+                                            aria-label={showPassword ? "Hide password" : "Show password"}
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? "🙈" : "👁️"}
+                                        </button>
+                                    </div>
+                                    {fieldErrors.password && (
+                                        <p className="auth-field-error" role="alert">{fieldErrors.password}</p>
+                                    )}
+                                </div>
+
+                                {/* Forgot password link — shown only in login mode */}
+                                {isLogin && (
+                                    <button
+                                        type="button"
+                                        className="auth-forgot-link"
+                                        onClick={() => { clearErrors(); setMode("forgot"); }}
+                                    >
+                                        Forgot password?
+                                    </button>
+                                )}
+
+                                <button type="submit" className="auth-submit" disabled={submitting}>
+                                    {submitting && <span className="auth-spinner" />}
+                                    {isLogin ? "Log in" : "Create account"}
+                                </button>
+                            </form>
+
+                            <div className="auth-switch">
+                                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                                {" "}
+                                <button
+                                    className="auth-switch-btn"
+                                    type="button"
+                                    onClick={() => switchMode(isLogin ? "signup" : "login")}
+                                >
+                                    {isLogin ? "Sign up" : "Log in"}
+                                </button>
+                            </div>
+
+                            {!isLogin && (
+                                <div className="auth-no-merge-note">
+                                    <strong>Note:</strong> Your current guest lists will not be merged
+                                    into your new account. They'll stay on this device until you clear them.
+                                </div>
                             )}
-                        </div>
-
-                        <button type="submit" className="auth-submit" disabled={submitting}>
-                            {submitting && <span className="auth-spinner" />}
-                            {isLogin ? "Log in" : "Create account"}
-                        </button>
-                    </form>
-
-                    <div className="auth-switch">
-                        {isLogin ? "Don't have an account?" : "Already have an account?"}
-                        {" "}
-                        <button
-                            className="auth-switch-btn"
-                            type="button"
-                            onClick={() => switchMode(isLogin ? "signup" : "login")}
-                        >
-                            {isLogin ? "Sign up" : "Log in"}
-                        </button>
-                    </div>
-
-                    {!isLogin && (
-                        <div className="auth-no-merge-note">
-                            <strong>Note:</strong> Your current guest lists will not be merged
-                            into your new account. They'll stay on this device until you clear them.
-                        </div>
+                        </>
                     )}
                 </div>
             </div>

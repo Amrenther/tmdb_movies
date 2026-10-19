@@ -37,6 +37,8 @@ export interface MovieListContextType {
     isInWatchlist: (id: number) => boolean;
     removeFavorite: (id: number) => Promise<void>;
     removeWatchlist: (id: number) => Promise<void>;
+    /** Register a callback that fires when a guest tries to add to a list. Called by MainLayout. */
+    registerAuthGate: (fn: () => void) => void;
 }
 
 const MovieListContext = createContext<MovieListContextType | null>(null);
@@ -80,6 +82,13 @@ export const MovieListProvider = ({ children }: { children: ReactNode }) => {
     const [listError, setListError] = useState<string | null>(null);
 
     const prevUserRef = useRef<typeof user | undefined>(undefined);
+
+    /** Holds the callback registered by MainLayout to open the AuthModal */
+    const onAuthRequiredRef = useRef<(() => void) | null>(null);
+
+    const registerAuthGate = useCallback((fn: () => void) => {
+        onAuthRequiredRef.current = fn;
+    }, []);
 
     // Save to localStorage only in guest mode
     useEffect(() => {
@@ -142,9 +151,14 @@ export const MovieListProvider = ({ children }: { children: ReactNode }) => {
         if (pendingIds.has(movie.id)) return;
 
         if (!user) {
-            setFavorites((prev) =>
-                isFavorite(movie.id) ? prev.filter((m) => m.id !== movie.id) : [movie, ...prev]
-            );
+            const alreadyFav = isFavorite(movie.id);
+            if (alreadyFav) {
+                // Allow guests to un-favorite if they somehow already have it
+                setFavorites((prev) => prev.filter((m) => m.id !== movie.id));
+            } else {
+                // Gate: guest trying to ADD → open auth modal
+                onAuthRequiredRef.current?.();
+            }
             return;
         }
 
@@ -208,9 +222,14 @@ export const MovieListProvider = ({ children }: { children: ReactNode }) => {
         if (pendingIds.has(movie.id)) return;
 
         if (!user) {
-            setWatchlist((prev) =>
-                isInWatchlist(movie.id) ? prev.filter((m) => m.id !== movie.id) : [movie, ...prev]
-            );
+            const alreadyIn = isInWatchlist(movie.id);
+            if (alreadyIn) {
+                // Allow guests to remove from watchlist if they already have it
+                setWatchlist((prev) => prev.filter((m) => m.id !== movie.id));
+            } else {
+                // Gate: guest trying to ADD → open auth modal
+                onAuthRequiredRef.current?.();
+            }
             return;
         }
 
@@ -285,6 +304,7 @@ export const MovieListProvider = ({ children }: { children: ReactNode }) => {
                 isInWatchlist,
                 removeFavorite,
                 removeWatchlist,
+                registerAuthGate,
             }}
         >
             {children}
